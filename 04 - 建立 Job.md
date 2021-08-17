@@ -18,10 +18,14 @@ public class BCH001JobConfig {
   
  
   public Job bch001Job(){
+    return jobBuilderFactory.get("BCH001Job")
+      .flow()
   
   }
 }
 ```
+
+`JobBuilderFactory` 內的 `get()` 方法，會回傳 `JobBuilder` 實例，接著我們就可以繼續用 `JobBuilder` 內部的方法繼續建立想要的 Job。
 
 Creates a job builder and initializes its job repository. Note that if the builder is used to create a &#64;Bean
 definition then the name of the job and the bean name might be different.
