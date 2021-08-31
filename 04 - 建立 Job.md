@@ -74,24 +74,6 @@ public class BCH001JobListener implements JobExecutionListener {
 }
 ```
 
-```java
-@Configuration
-@EnableBatchProcessing(modular = true)
-public class BatchConfig extends DefaultBatchConfigurer {
-    
-    @Override
-    public void setDataSource(DataSource dataSource) {
-        // 讓Spring Batch自動產生的table不寫入DB
-    }
-       
-    @Bean
-    public ApplicationContextFactory getJobContext() {
-        // return new GenericApplicationContextFactory(BCHTXMSG001JobConfig.class);
-        return new GenericApplicationContextFactory(BCH001obConfig.class, BCH002obConfig.class);
-    }
-}
-```
-
 ## 參考
 * https://www.toptal.com/spring/spring-batch-tutorial
 * https://www.javadevjournal.com/spring-batch/spring-batch-job-configuration/
