@@ -6,7 +6,9 @@
 spring.batch.exapmle.job // 新增
   |--BCH001JobConfig.java // 新增
 ```
-`BCH001JobConfig.java`
+<br/>
+
+1. `BCH001JobConfig.java`
 ```java
 public class BCH001JobConfig {
   
