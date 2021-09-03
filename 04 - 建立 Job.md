@@ -23,7 +23,7 @@ public class BCH001JobConfig {
    * @param step
    * @return
    */
-  public Job bch001Job(){
+  public Job bch001Job(@Qualifier("BCH001Job") Step step){
     return jobBuilderFactory.get("BCH001Job")
       .start(step)
       .listener(new BCH001JobListener)
