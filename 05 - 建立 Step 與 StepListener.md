@@ -1,4 +1,4 @@
-# 05 - 建立 Step
+# 05 - 建立 Step 與 StepListener
 
 ## 建立 Step
 Step 物件封裝了批次處理作業的一個獨立的、有順序的階段。在 Step 中可以自行定義及控制實際批次處理所需要的所有訊息，例如如何讀取、如何處理讀取後的資料等等。一個簡單的 Step 也許只需要簡短的程式，而複雜的業務邏輯也可以透過 Step 的架構來進行設計及處理。
@@ -14,7 +14,7 @@ ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進
 
 接下來就開始建立一個 Step。
 ```
-spring.batch.exapmle.job
+spring.batch.springBatchPractice.job
   |--BCH001JobConfig.java // 修改
 spring.batch.exapmle.listener 
   |--BCH001JobListener.java // 新增
@@ -132,7 +132,16 @@ public interface StepListener {
 }
 ```
 
-而我們使用的是 StepExecutionListener，這個介面提供一些阻斷 ( interceptions ) 及
+而我們使用的是 StepExecutionListener，這個介面提供一些阻斷 ( interceptions ) 及生命週期 ( life-cycle ) 相關的方法。實作該介面會有兩個一定要 override 的方法，分別是 `beforeStep()` 及 `afterStep()`，可以透過這兩個方法在執行 Step 的前後做一些處理。`afterStep()` 會回傳一個 `ExitStatus` 狀態代碼，如 `EXECUTING`、`COMPLETED`、`STOPPED` 等等，來表示這次 Step 的執行是否成功。
+
+```
+spring.batch.springBatchPractice.job
+  |--BCH001JobConfig.java
+spring.batch.springBatchPractice.listener 
+  |--BCH001JobListener.java
+  |--BCH001StepListener.java // 新增
+```
+
 ```java
 public class BCH001StepListener implements StepExecutionListener{
   private static final Logger LOGGER = LoggerFactory.getLogger(BCH001StepListener.class);
