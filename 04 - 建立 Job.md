@@ -26,13 +26,12 @@ public class BCH001JobConfig {
   public Job bch001Job(@Qualifier("BCH001Job") Step step){
     return jobBuilderFactory.get("BCH001Job")
       .start(step)
-      .listener(new BCH001JobListener)
+      .listener(new BCH001JobListener())
       .build();
   }
 }
 ```
-
-`JobBuilderFactory` 內的 `get()` 方法，會回傳 `JobBuilder` 實例，接著我們就可以繼續用 `JobBuilder` 內部的方法繼續建立想要的 Job。傳入的 `name` 會透過 JobBuilder 建構式對 Job 進行命名。下面是 JobFactory 內的 `get()` 方法：
+在 `bch001Job()` 方法中注入 Step，Step 物件會在下一個章節建立。專案中如果建立不只一個 Step 時，注入到 Job 中必須以 `@Qualifier` 來指定要的實力物件是哪一個類別的。再來，`JobBuilderFactory` 內的 `get()` 方法，會回傳 `JobBuilder` 實例，接著我們就可以繼續用 `JobBuilder` 內部的方法繼續建立想要的 Job。傳入的 `name` 會透過 JobBuilder 建構式對 Job 進行命名。下面是 JobFactory 內的 `get()` 方法：
 ```java
 /**
  * Creates a job builder and initializes its job repository. Note that if the builder is used to create a &#64;Bean
@@ -47,7 +46,7 @@ public JobBuilder get(String name) {
 }
 ```
 
-而如果需要監聽 Job 的話也可以使用 `listener()` 加入監聽器來監控狀況。
+如果需要監聽 Job 的話也可以使用 `listener()` 加入監聽器來監控狀況。
 ```
 spring.batch.exapmle.job
   |--BCH001JobConfig.java 
