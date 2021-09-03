@@ -1,4 +1,4 @@
-# 建立 ItemReader 與 ReaderListener
+# 06 - 建立 ItemReader 與 ReaderListener
 ItemReader 顧名思義就是用來讀取資料的，讀取資料的來源大致上可以分為三種：
 1. 檔案 ( Flat File )
 2. XML
