@@ -3,12 +3,12 @@
 由於最終是要對 spring 容器注入設定好的 Job，在 `BCH001JobConfig.java` 內會以方法搭配 `@Bean` 來產生 Job。
 
 ```
-spring.batch.exapmle.job // 新增
+spring.batch.springBatchPractice.job // 新增
   |--BCH001JobConfig.java // 新增
 ```
 <br/>
 
-1. `BCH001JobConfig.java`
+* `BCH001JobConfig.java`
 ```java
 public class BCH001JobConfig {
   
@@ -48,13 +48,13 @@ public JobBuilder get(String name) {
 
 如果需要監聽 Job 的話也可以使用 `listener()` 加入監聽器來監控狀況。
 ```
-spring.batch.exapmle.job
+spring.batch.springBatchPractice.job
   |--BCH001JobConfig.java 
-spring.batch.exapmle.listener // 新增
+spring.batch.springBatchPractice.listener // 新增
   |--BCH001JobListener.java // 新增
 ```
 
-`BCH001JobListener.java`
+* `BCH001JobListener.java`
 ```java
 /**
  * JBCHRESID001 JobListener
