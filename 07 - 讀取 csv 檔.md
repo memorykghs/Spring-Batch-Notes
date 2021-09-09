@@ -205,8 +205,24 @@ FieldSetMapper<BookInfoDto> fieldSetMapper = fieldSet -> {
 2. BeanWrapperFieldSetMapper
 在轉換過程中可以將 FieldSet 的 `names` 屬性與目標物件的 field 繫結，就可以直接使用映射轉換。目標物件的 field 名稱必須跟前面 LineTokenizer 設定的 `names` 一樣才可以轉換。
 ```java
-FieldSetMapper<BookInfoDto> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
-fieldSetMapper.setTargetType(BookInfoDto.class);
+/**
+ * 建立 LineMapper
+ */
+private LineMapper<BookInfoDto> getBookInfoLineMapper() {
+  DefaultLineMapper<BookInfoDto> bookInfoLineMapper = new DefaultLineMapper<>();
+
+  // 1. 設定每一筆資料的欄位拆分規則
+  DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+
+  // 2. 指定 fieldSet 對應邏輯
+  BeanWrapperFieldSetMapper<BookInfoDto> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
+  fieldSetMapper.setTargetType(BookInfoDto.class);
+
+  bookInfoLineMapper.setLineTokenizer(tokenizer);
+  bookInfoLineMapper.setFieldSetMapper(fieldSetMapper);
+  return bookInfoLineMapper;
+}
+
 ```
 <br/>
 
