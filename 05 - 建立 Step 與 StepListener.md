@@ -15,15 +15,15 @@ ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進
 接下來就開始建立一個 Step。
 ```
 spring.batch.springBatchPractice.job
-  |--BCH001JobConfig.java // 修改
-spring.batch.exapmle.listener 
-  |--BCH001JobListener.java // 新增
+  |--BCHBORED001JobConfig.java // 修改
+spring.batch.springBatchPractice.listener 
+  |--BCHBORED001JobListener.java // 新增
 ```
 <br/>
 
-1. `BCH001JobConfig.java`
+1. `BCHBORED001JobConfig.java`
 ```java
-public class BCH001JobConfig {
+public class BCHBORED001JobConfig {
   
   /** JobBuilderFactory */
   @Autowired
@@ -43,10 +43,10 @@ public class BCH001JobConfig {
    * @param step
    * @return
    */
-  public Job bch001Job(){
-    return jobBuilderFactory.get("BCH001Job")
+  public Job bCHBORED001Job(){
+    return jobBuilderFactory.get("BCHBORED001Job")
       .start(step)
-      .listener(new BCH001JobListener)
+      .listener(new BCHBORED001JobListener)
       .build();
   }
   
@@ -68,17 +68,16 @@ public class BCH001JobConfig {
   * @param jpaTransactionManager
   * @return
   */
-  @Bean(name = "BCH001Step1")
-  private Step BCH001Step1(ItemReader<Map<String, Object>> itemReader, BCH001Processor process, ItemWriter<BsrResvResidual> itemWriter,
-          JpaTransactionManager jpaTransactionManager) {
-      return stepBuilderFactory.get("BCH001Step1")
+  @Bean(name = "BCHBORED001Step1")
+  private Step BCHBORED001Step1(ItemReader<Map<String, Object>> itemReader, BCHBORED001Processor process, JpaTransactionManager jpaTransactionManager) {
+      return stepBuilderFactory.get("BCHBORED001Step1")
               .transactionManager(jpaTransactionManager)
-              .<Map<String, Object>, BsrResvResidual> chunk(FETCH_SIZE)
+              .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
               .faultTolerant()
               .skip(Exception.class)
               .skipLimit(Integer.MAX_VALUE)
               .writer(itemWriter)
-              .listener(new BCH001StepListener())
+              .listener(new BCHBORED001StepListener())
               .build();
   }
 ```
@@ -136,15 +135,15 @@ public interface StepListener {
 
 ```
 spring.batch.springBatchPractice.job
-  |--BCH001JobConfig.java
+  |--BCHBORED001JobConfig.java
 spring.batch.springBatchPractice.listener 
-  |--BCH001JobListener.java
-  |--BCH001StepListener.java // 新增
+  |--BCHBORED001JobListener.java
+  |--BCHBORED001StepListener.java // 新增
 ```
 
 ```java
-public class BCH001StepListener implements StepExecutionListener{
-  private static final Logger LOGGER = LoggerFactory.getLogger(BCH001StepListener.class);
+public class BCHBORED001StepListener implements StepExecutionListener{
+  private static final Logger LOGGER = LoggerFactory.getLogger(BCHBORED001StepListener.class);
 
   @Override
   public void beforeStep(StepExecution stepExecution) {
@@ -154,7 +153,7 @@ public class BCH001StepListener implements StepExecutionListener{
   @Override
   public ExitStatus afterStep(StepExecution stepExecution) {
       String msg = new StringBuilder()
-              .append("BCH001: 讀取設定檔筆數: ")
+              .append("BCHBORED001: 讀取設定檔筆數: ")
               .append(stepExecution.getReadCount())
               .append(", 成功筆數: ")
               .append(stepExecution.getWriteCount())
