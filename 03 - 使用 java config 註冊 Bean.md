@@ -3,7 +3,7 @@
 因為要向 Spring 容器中配置 Spring Batch 相關的 Bean，可以寫一個 Config 檔來處理。
 
 ```
-spring.batch.exapmle.config // 新增
+spring.batch.springBatchPractice.config // 新增
   |--BatchConfig.java // 新增
 ```
 
