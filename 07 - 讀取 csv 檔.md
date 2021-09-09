@@ -50,11 +50,11 @@ public class BCHBORED001JobConfig {
    * @return
    */
   @Bean("fileReaderStep")
-  private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, BCH001Processor process, ItemWriter<BsrResvResidual> itemWriter,
+  private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, BCH001Processor process, ItemWriter<BookInfoDto> itemWriter,
           JpaTransactionManager jpaTransactionManager) {
       return stepBuilderFactory.get("BCH001Step1")
               .transactionManager(jpaTransactionManager)
-              .<BookInfoDto, BsrResvResidual> chunk(FETCH_SIZE)
+              .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
               .reader(itemReader)
               .processor(process) 
               .faultTolerant()
