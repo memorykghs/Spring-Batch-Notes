@@ -36,7 +36,10 @@ public class BCH001JobConfig {
      */
     public Job bch001Job(@Qualifier("BCH001Job")
     Step step) {
-        return jobBuilderFactory.get("BCH001Job").start(step).listener(new BCH001JobListener()).build();
+        return jobBuilderFactory.get("BCH001Job")
+        .start(step)
+        .listener(new BCH001JobListener())
+        .build();
     }
     
     /**
@@ -58,8 +61,7 @@ public class BCH001JobConfig {
      * @return
      */
     @Bean(name = "BCH001Step1")
-    private Step BCH001Step1(ItemReader<Map<String, Object>> itemReader, BCH001Processor process, ItemWriter<BsrResvResidual> itemWriter,
-            JpaTransactionManager jpaTransactionManager) {
+    private Step BCH001Step1(ItemReader<Map<String, Object>> itemReader, BCH001Processor process, JpaTransactionManager jpaTransactionManager) {
         return stepBuilderFactory.get("BCH001Step1")
                 .transactionManager(jpaTransactionManager)
                 .<Map<String, Object>, BsrResvResidual> chunk(FETCH_SIZE)
@@ -68,10 +70,7 @@ public class BCH001JobConfig {
                 .faultTolerant()
                 .skip(Exception.class)
                 .skipLimit(Integer.MAX_VALUE)
-                .writer(itemWriter)
                 .listener(new BCH001ReaderListener())
-                .listener(new BCH001ProcessListener())
-                .listener(new BCH001WriterListener())
                 .listener(new BCH001StepListener())
                 .build();
     }
