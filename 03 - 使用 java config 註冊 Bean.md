@@ -20,7 +20,7 @@ public class BatchConfig extends DefaultBatchConfigurer {
        
     @Bean
     public ApplicationContextFactory getJobContext() {
-        return new GenericApplicationContextFactory(BCH001JobConfig.class);
+        return new GenericApplicationContextFactory(BCHBORED001JobConfig.class);
     }
 }
 ```
