@@ -330,3 +330,5 @@ public class BCHBORED001JobConfig {
 ## 參考
 * https://stackoverflow.com/questions/66234905/reading-csv-data-in-spring-batch-creating-a-custom-linemapper
 * https://www.itread01.com/content/1562677203.html
+* https://www.petrikainulainen.net/programming/spring-framework/spring-batch-tutorial-reading-information-from-a-file/
+* https://www.dineshonjava.com/spring-batch-read-from-csv-and-write-to-relational-db/
