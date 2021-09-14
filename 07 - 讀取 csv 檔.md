@@ -178,7 +178,7 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
   return bookInfoLineMapper;
 }
 ```
-整體的轉換順序大致如下圖：
+整體的轉換順序大致如下圖：<br/>
 ![](images/7-1.png)
 <br/>
 
@@ -203,7 +203,7 @@ FieldSetMapper<BookInfoDto> fieldSetMapper = fieldSet -> {
 <br/>
 
 2. BeanWrapperFieldSetMapper
-在轉換過程中可以將 FieldSet 的 `names` 屬性與目標物件的 field 繫結，就可以直接使用映射轉換。目標物件的 field 名稱必須跟前面 LineTokenizer 設定的 `names` 一樣才可以轉換。
+在轉換過程中可以將 FieldSet 的 `names` 屬性與目標物件的 field 繫結，就可以直接使用映射轉換。目標物件的 field 名稱必須跟前面 LineTokenizer 設定的 `names` 一樣才可以轉換 ( 目前看起來大小寫不一樣好像沒有關係 )。
 ```java
 /**
  * 建立 LineMapper
@@ -229,9 +229,7 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 ## 完整檔案
 完整檔案如下：
 ```java
-public class BCHBORED001JobConfig {
-
-    /** JobBuilderFactory */
+/** JobBuilderFactory */
     @Autowired
     private JobBuilderFactory jobBuilderFactory;
 
@@ -240,17 +238,17 @@ public class BCHBORED001JobConfig {
     private StepBuilderFactory stepBuilderFactory;
 
     /** Mapping 欄位名稱 */
-    private static final String[] MAPPER_FIELD = new String[] { "BookName", "Author", "Category", "Tags", "Recommend", "Description", "Comment1",
-            "Comment2", "UpdDate", "UpdName" };
-    
+    private static final String[] MAPPER_FIELD = new String[] { "BookName", "Author", "Category", "Tags", "Recommend", "Description",
+            "Comment1", "Comment2", "UpdDate", "UpdName" };
+
     /** 每批件數 */
     private static final int FETCH_SIZE = 10;
 
     @Bean
-    public Job fileReaderJob(@Qualifier("fileReaderJob") Step step) {
-        return jobBuilderFactory.get("fileReaderJob")
+    public Job fileReaderJob(@Qualifier("fileReaderStep") Step step) {
+        return jobBuilderFactory.get("BCHBORED001Job")
                 .start(step)
-                .listener(null)
+                .listener(new BCHBORED001JobListener())
                 .build();
     }
 
@@ -262,21 +260,31 @@ public class BCHBORED001JobConfig {
      * @param jpaTransactionManager
      * @return
      */
-    @Bean("fileReaderStep")
-    private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, BCH001Processor process, ItemWriter<BsrResvResidual> itemWriter,
+    @Bean
+    @Qualifier("fileReaderStep")
+    private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, ItemWriter<BookInfoDto> itemWriter,
             JpaTransactionManager jpaTransactionManager) {
         return stepBuilderFactory.get("BCH001Step1")
                 .transactionManager(jpaTransactionManager)
-                .<BookInfoDto, BsrResvResidual> chunk(FETCH_SIZE)
-                .reader(itemReader)
-                .processor(process) 
-                .faultTolerant()
+                .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
+                .reader(itemReader).faultTolerant()
                 .skip(Exception.class)
                 .skipLimit(Integer.MAX_VALUE)
                 .writer(itemWriter)
                 .listener(new BCHBORED001StepListener())
                 .listener(new BCHBORED001ReaderListener())
+                .listener(new BCHBORED001WriterListener())
                 .build();
+    }
+    
+    /**
+     * Step Transaction
+     * @return
+     */
+    @Bean
+    public JpaTransactionManager jpaTransactionManager() {
+        final JpaTransactionManager transactionManager = new JpaTransactionManager();
+        return transactionManager;
     }
 
     /**
@@ -285,8 +293,9 @@ public class BCHBORED001JobConfig {
      */
     @Bean
     public ItemReader<BookInfoDto> getItemReader() {
-        return new FlatFileItemReaderBuilder<BookInfoDto>().name("fileReader")
-                .resource(new ClassPathResource("/excel/書單.csv"))
+        return new FlatFileItemReaderBuilder<BookInfoDto>().name("fileItemReader")
+                .resource(new ClassPathResource("excel/書單.csv"))
+                .encoding("UTF-8")
                 .linesToSkip(1)
                 .lineMapper(getBookInfoLineMapper())
                 .build();
@@ -304,25 +313,12 @@ public class BCHBORED001JobConfig {
         tokenizer.setNames(MAPPER_FIELD);
 
         // 2. 指定 fieldSet 對應邏輯
-        FieldSetMapper<BookInfoDto> fieldSetMapper = fieldSet -> {
-        BookInfoDto bookInfDto = new BookInfoDto();
-        bookInfDto.setBookName(fieldSet.readString("BookName"));
-        bookInfDto.setAuthor(fieldSet.readString("Author"));
-        bookInfDto.setCategory(fieldSet.readString("Category"));
-        bookInfDto.setTags(fieldSet.readString("Tags"));
-        bookInfDto.setRecommend(fieldSet.readString("Recommend"));
-        bookInfDto.setDescription(fieldSet.readString("Description"));
-        bookInfDto.setComment1(fieldSet.readString("Comment1"));
-        bookInfDto.setComment2(fieldSet.readString("Comment2"));
-        bookInfDto.setUpdDate(fieldSet.readString("UpdDate"));
-        bookInfDto.setUpdName(fieldSet.readString("UpdName"));
+        BeanWrapperFieldSetMapper<BookInfoDto> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
+        fieldSetMapper.setTargetType(BookInfoDto.class);
 
-        return bookInfDto;
-      };
-        
-      bookInfoLineMapper.setLineTokenizer(tokenizer);
-      bookInfoLineMapper.setFieldSetMapper(fieldSetMapper);
-      return bookInfoLineMapper;
+        bookInfoLineMapper.setLineTokenizer(tokenizer);
+        bookInfoLineMapper.setFieldSetMapper(fieldSetMapper);
+        return bookInfoLineMapper;
     }
 }
 ```
