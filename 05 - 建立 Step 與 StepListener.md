@@ -14,78 +14,71 @@ ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進
 
 接下來就開始建立一個 Step。
 ```
-spring.batch.springBatchPractice.job
+spring.batch.springBatchPractice.batch.job
   |--BCHBORED001JobConfig.java // 修改
-spring.batch.springBatchPractice.listener 
+spring.batch.springBatchPractice.batch.listener 
   |--BCHBORED001JobListener.java // 新增
 ```
 <br/>
 
-1. `BCHBORED001JobConfig.java`
+* `BCHBORED001JobConfig.java`
 ```java
 public class BCHBORED001JobConfig {
-  
-  /** JobBuilderFactory */
-  @Autowired
-  private JobBuilderFactory jobBuilderFactory;
 
-  /** StepBuilderFactory */
-  @Autowird
-  private StepBuilderFactory stepBuilderFactory;
-  
-  // 要引入的 Repo
-  
-  /** 分批件數 */
-  private static final int FETCH_SIZE = 10;
-  
-  /**
-   * 註冊 job
-   * @param step
-   * @return
-   */
-  public Job bCHBORED001Job(){
-    return jobBuilderFactory.get("BCHBORED001Job")
-      .start(step)
-      .listener(new BCHBORED001JobListener)
-      .build();
-  }
-  
-  /**
-   * Step Transaction
-   * @return
-   */
-  @Bean
-  public JpaTransactionManager jpaTransactionManager() {
-      final JpaTransactionManager transactionManager = new JpaTransactionManager();
-      return transactionManager;
-  }
+    /** JobBuilderFactory */
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
 
-  /**
-  * 註冊 Step
-  * @param itemReader
-  * @param process
-  * @param itemWriter
-  * @param jpaTransactionManager
-  * @return
-  */
-  @Bean(name = "BCHBORED001Step1")
-  private Step BCHBORED001Step1(ItemReader<Map<String, Object>> itemReader, BCHBORED001Processor process, JpaTransactionManager jpaTransactionManager) {
-      return stepBuilderFactory.get("BCHBORED001Step1")
-              .transactionManager(jpaTransactionManager)
-              .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
-              .faultTolerant()
-              .skip(Exception.class)
-              .skipLimit(Integer.MAX_VALUE)
-              .writer(itemWriter)
-              .listener(new BCHBORED001StepListener())
-              .build();
-  }
+    /** StepBuilderFactory */
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+
+    /** 每批件數 */
+    private static final int FETCH_SIZE = 10;
+
+    @Bean
+    public Job fileReaderJob(@Qualifier("BCHBORED001Step") Step step) {
+        return jobBuilderFactory.get("BCHBORED001Job")
+                .start(step)
+                .listener(new BCHBORED001JobListener())
+                .build();
+    }
+
+    /**
+     * 註冊 Step
+     * @param itemReader
+     * @param process
+     * @param itemWriter
+     * @param jpaTransactionManager
+     * @return
+     */
+    @Bean
+    @Qualifier("BCHBORED001Step")
+    private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, JpaTransactionManager jpaTransactionManager) {
+        return stepBuilderFactory.get("BCHBORED001Step")
+                .transactionManager(jpaTransactionManager)
+                .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
+                .reader(itemReader).faultTolerant()
+                .skip(Exception.class)
+                .skipLimit(Integer.MAX_VALUE)
+                .build();
+    }
+
+    /**
+     * Step Transaction
+     * @return
+     */
+    @Bean
+    public JpaTransactionManager jpaTransactionManager() {
+        final JpaTransactionManager transactionManager = new JpaTransactionManager();
+        return transactionManager;
+    }
 ```
 
 在上面的步驟中，同樣透過 StepBuilderFactory 的 `get()` 方法取得 StepBuilder 物件，並為這個產生出來的 Step 實例進行命名。後面則包含了一些在建立 Step 過程中所需的依賴：
 * `reader()`：註冊 ItemReader 並由 ItemReader 讀取要處理的項目。
 * `transactionManager()`：Spring 提供 `PlatformTransactionManager` 類別，用來在處理資料時進行交易 ( begins and commit )。
-* `chunk()`：用來設定每批資料的數量。
+* `chunk()`：用來設定每批資料的數量，泛型的第一個參數是輸入的資料格式，後面的代表經過處理後，要用 ItemWriter 輸出的資料格式。
 
 需要注意的是，`PlatformTransactionManager` 是通過加在類別上的 `@EnableBatchProcessing` 標註取得默認的物件實例，可以用 `@Autowired` 或是當作傳入參數注入到產生 Step 的方法中。而如果像上面這個例子是沒有加上 `@EnableBatchProcessing` 標註的話，就需要另外注入。
 
@@ -134,13 +127,14 @@ public interface StepListener {
 而我們使用的是 StepExecutionListener，這個介面提供一些阻斷 ( interceptions ) 及生命週期 ( life-cycle ) 相關的方法。實作該介面會有兩個一定要 override 的方法，分別是 `beforeStep()` 及 `afterStep()`，可以透過這兩個方法在執行 Step 的前後做一些處理。`afterStep()` 會回傳一個 `ExitStatus` 狀態代碼，如 `EXECUTING`、`COMPLETED`、`STOPPED` 等等，來表示這次 Step 的執行是否成功。
 
 ```
-spring.batch.springBatchPractice.job
-  |--BCHBORED001JobConfig.java
-spring.batch.springBatchPractice.listener 
+spring.batch.springBatchPractice.batch.job
+  |--BCHBORED001JobConfig.java // 修改
+spring.batch.springBatchPractice.batch.listener 
   |--BCHBORED001JobListener.java
   |--BCHBORED001StepListener.java // 新增
 ```
 
+* `BCHBORED001StepListener.java`
 ```java
 public class BCHBORED001StepListener implements StepExecutionListener{
   private static final Logger LOGGER = LoggerFactory.getLogger(BCHBORED001StepListener.class);
@@ -163,6 +157,64 @@ public class BCHBORED001StepListener implements StepExecutionListener{
       return ExitStatus.COMPLETED;
   }
 }
+```
+
+建立 ItemReaderListener 後在 `BCHBORED001JobConfig.java` 中注入 Listener。
+
+* `BCHBORED001JobConfig.java`
+```java
+public class BCHBORED001JobConfig {
+
+    /** JobBuilderFactory */
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
+
+    /** StepBuilderFactory */
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+
+    /** 每批件數 */
+    private static final int FETCH_SIZE = 10;
+
+    @Bean
+    public Job fileReaderJob(@Qualifier("BCHBORED001Step") Step step) {
+        return jobBuilderFactory.get("BCHBORED001Job")
+                .start(step)
+                .listener(new BCHBORED001JobListener())
+                .build();
+    }
+
+    /**
+     * 註冊 Step
+     * @param itemReader
+     * @param process
+     * @param itemWriter
+     * @param jpaTransactionManager
+     * @return
+     */
+    @Bean
+    @Qualifier("BCHBORED001Step")
+    private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, JpaTransactionManager jpaTransactionManager) {
+        return stepBuilderFactory.get("BCHBORED001Step")
+                .transactionManager(jpaTransactionManager)
+                .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
+                .reader(itemReader).faultTolerant()
+                .skip(Exception.class)
+                .skipLimit(Integer.MAX_VALUE)
+                .writer(itemWriter)
+                .listener(new BCHBORED001StepListener()) // 註冊 Listener
+                .build();
+    }
+
+    /**
+     * Step Transaction
+     * @return
+     */
+    @Bean
+    public JpaTransactionManager jpaTransactionManager() {
+        final JpaTransactionManager transactionManager = new JpaTransactionManager();
+        return transactionManager;
+    }
 ```
 
 ## 參考
