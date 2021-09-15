@@ -1,4 +1,4 @@
-# 09 - 建立 ItemWriter、ItemWriterListener 並寫入資料庫
+# 08 - 建立 ItemWriter、ItemWriterListener 並寫入資料庫
 ItemWriter 在功能上與 ItemReader 類似，不過是相反的操作；相較於 ItemReader 每次以一個 `item` ( 一筆資料 ) 為單位循環讀取，ItemWriter 則是以一個 `chunk` 為一批，一塊一塊輸出。大部分的情況下，這些操作可以是插入、更新或發送。ItemWriter 介面如下：
 ```java
 public interface ItemWriter<T> {
