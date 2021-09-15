@@ -1,5 +1,5 @@
 # 07 - 讀取 csv 檔
-上一章提到 Spring Batch 的讀取資料來源大致上可以分為三種，下面的將以讀取 csv 檔為例。最常用的讀取檔案的 ItemReader 是 FlatFileItemReader。FlatFile 是**扁平結構檔案** ( 也稱為矩陣結構檔案 )，是最常見的一種檔案型別。讀取時通常以一行 ( line ) 為一個單位，同一行資料的欄位支間可以用某種方式切割，例如常見的分號 `;`、逗號 `,`，或是索引 ( index ) 等等。與一般的 JSON、XML 檔案的差別在於他沒有一個特定的結構，所以在讀取的時候需要定義讀取及轉換的規則。
+上一章提到 Spring Batch 的讀取資料來源大致上可以分為三種，下面的例子將以讀取 csv 檔為例。最常用的讀取檔案的 ItemReader 是 FlatFileItemReader。FlatFile 是**扁平結構檔案** ( 也稱為矩陣結構檔案 )，是最常見的一種檔案型別。讀取時通常以一行 ( line ) 為一個單位，同一行資料的欄位支間可以用某種方式切割，例如常見的分號 `;`、逗號 `,`，或是索引 ( index ) 等等。與一般的 JSON、XML 檔案的差別在於他沒有一個特定的結構，所以在讀取的時候需要定義讀取及轉換的規則。
 
 ## 建立 FlatFileItemReader
 Spring Batch 為檔案讀取提供了 FlatFileItemReader 類別，並提供一些方法用來讀取資料和轉換。在 FlatFileItemReader 中有2個主要的功能介面：Resource 及 LineMapper。 Resource 用於外部檔案讀取，例如：
@@ -56,7 +56,6 @@ public class BCHBORED001JobConfig {
               .transactionManager(jpaTransactionManager)
               .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
               .reader(itemReader)
-              .processor(process) 
               .faultTolerant()
               .skip(Exception.class)
               .skipLimit(Integer.MAX_VALUE)
@@ -64,6 +63,16 @@ public class BCHBORED001JobConfig {
               .listener(new BCHBORED001StepListener())
               .listener(new BCHBORED001ReaderListener())
               .build();
+  }
+  
+  /**
+   * Step Transaction
+   * @return
+   */
+  @Bean
+  public JpaTransactionManager jpaTransactionManager() {
+    final JpaTransactionManager transactionManager = new JpaTransactionManager();
+    return transactionManager;
   }
 
   /**
