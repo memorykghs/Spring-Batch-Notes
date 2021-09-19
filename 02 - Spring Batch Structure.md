@@ -19,6 +19,8 @@ Tasklet | Step中具體執行邏輯，可重複執行
 Job 是一個封裝整個批次處理的實體。跟其他的 Spring Project 一樣，Job 實體可以透過使用 XML 檔案或是 Java-based 的設定檔串接在一起，通常我們會稱這個檔案叫做 Job Configuration。而 Job 是整個流程最頂層的結構，示意圖如下：<br/>
 ![](/images/2-1.png)
 
+> ![](/images/icon-info.png) 有一個定義好的 EndOfDay Job，執行時可以產生多個 Job Instance，Job Instance 又可以產生多個 Job Execution。
+
 在 Spring Batch 中，Job 是一個裝有 Step 實例的一個簡單的容器。一個 Job 內可以有多個流程相關聯的 Step，並透過設定來配置這個 Job 下的所有 Step 的行為，例如可以重啟 ( restartability )。Job Configuration 包含：
   * 為 Job 實例命名，每個 Job 都有自己唯一的 ID
   * 定義 Step 實例以及其順序
@@ -38,13 +40,45 @@ public Job footballJob() {
 ```
 
 #### JobInstance
-Job 執行時期會產生一個 Job Instance ( 作業實例 )，每一次啟動 Job 都會產生一個實例。Job Instance 的來源有2種可能：
-  * 根據設置的 Job Parameters 從 Job Repository 中獲取
-  * 如果 Job Repository 中沒有拿到，則建立新的 Job Instance
+Job 執行時期會產生一個 JobInstance ( 作業實例 )，每一次啟動 Job 都會產生一個實例。JobInstance 的來源有2種可能：
+  * 根據設置的 JobParameters 從 JobRepository 中獲取
+  * 如果 Job Repository 中沒有拿到，則建立新的 JobInstance
 
 Job Instance 之間需要靠 Job Parameters 區分。
 
-#### Job Parameter
+#### JobParameters
+上面提到 JobInstance 是靠不同的 JobParameters 來區分。如果同一個 Job，Job Name 相同，則 JobParameters 不相同；若是不同的 Job，則允許有相同的 Job Parameter。也就是說：
+> JobInstance = Job + identifying JobParameters
+
+<br/>
+
+![](/images/2-3.png)
+
+JobParameters 可以有4種不同的型別：`String`、`Date`、`Long` 或 `Double`。我們可以透過 cmd 來執行一個 Job，傳入的參數是 `schedule.date(date) = 2021/09/19`：
+```cmd
+java CommandLineJobRunner io.spring.EndOfDayConfiguration endOfDate schedule.date(date)=2021/09/19
+```
+
+CommandLineJobRunner 是 Spring Batch 提供的一個具有 `main` 方法的類別，指令內指定從 `io.spring.EndOfDayConfiguration` 這個有標註 `@Configuration` 的檔案中依照設定建立 Job；接下來的 `endOfDate` 則是 Job 的名稱，也就是產生 Job 的 `@Bean` 方法中設定。最後的 `schedule.date(date)=2021/09/19` 是傳入的 JobParameters。
+
+另外，Spring Batch 框架也提供了通過 `JobParametersBuilder` 類別來建構參數：
+```java
+JobParameter jobParameter = (new JobParameterBuilder(jobParameter, jobExplorer)).getNextJobParameters(job).toJobParameters();
+```
+
+#### JobExecution
+JobExecution 是一個概念，同一個 JobInstance 不同次的執行，不管成功或失敗都會產生不同的 JobExecution。假設 `EndOfDay` 這個 Job 在 2021-01-01 時執行失敗，再重新啟動一次，這時候就會產生新的 JobExecution，不過仍然是使用同一個 JobInstance。JobExecution 的儲存機制 ( storage mechanism ) 會記錄在執行時期相關的屬性，這些屬性會被持久化保存。
+
+| Property | Definition |
+| --- | --- |
+| `status` | 代表執行時期的狀態，當執行時狀態會是 `BatchStatus#STARTED`；如果執行失敗，則狀態為 `BatchStatus#FAILED`；執行成功且完成的畫則是 `BatchStatus#COMPLETED`。 |
+| `startTime` | 當開始執行時會產生一個 `java.util.Date` 物件紀錄當前時間，在尚未執行前此欄位是空的。 |
+| `endTime` | 不管執行結果成功或失敗，一旦執行完成，就會產生 `java.util.Date` 物件記錄當前時間。 |
+| `exitStatus` | 執行結果的狀態，Spring Batch 會依照此結果將代碼回傳給呼叫的方法。當 Job 還沒有執行結束前此欄位為空。 |
+| `createTime` | A java.util.Date representing the current system time when the JobExecution was first persisted. The job may not have been started yet (and thus has no start time), but it always has a createTime, which is required by the framework for managing job level ExecutionContexts. |
+| `lastUpdated` | A java.util.Date representing the last time a JobExecution was persisted. This field is empty if the job has yet to start. |
+| `executionContext` |The "property bag" containing any user data that needs to be persisted between executions. | 
+| `failureExceptions` | The list of exceptions encountered during the execution of a Job. These can be useful if more than one exception is encountered during the failure of a Job. |
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/domain.html#job
