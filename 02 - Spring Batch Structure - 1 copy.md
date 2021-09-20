@@ -1,4 +1,4 @@
-# 02 - Spring Batch Structure
+# 02 - Spring Batch Structure - 1
 
 ## Spring Batch 架構大綱
 | 物件 | 說明 |
@@ -69,16 +69,55 @@ JobParameter jobParameter = (new JobParameterBuilder(jobParameter, jobExplorer))
 #### JobExecution
 JobExecution 是一個概念，同一個 JobInstance 不同次的執行，不管成功或失敗都會產生不同的 JobExecution。假設 `EndOfDay` 這個 Job 在 2021-01-01 時執行失敗，再重新啟動一次，這時候就會產生新的 JobExecution，不過仍然是使用同一個 JobInstance。JobExecution 的儲存機制 ( storage mechanism ) 會記錄在執行時期相關的屬性，這些屬性會被持久化保存。
 
-| Property | Definition |
+| Property | Type | Definition |
+| --- | --- | --- |
+| `status` | | 代表執行時期的狀態，當執行時狀態會是 `BatchStatus#STARTED`；如果執行失敗，則狀態為 `BatchStatus#FAILED`；執行成功且完成的畫則是 `BatchStatus#COMPLETED`。 |
+| `startTime` | `java.util.Date` | 紀錄開始執行時當前的時間，在尚未執行前此欄位微空。 |
+| `endTime` | `java.util.Date` | 紀錄執行完成的時間，不管執行結果成功或失敗。執行未完成前此欄位為空。 |
+| `exitStatus` | | 執行結果的狀態，Spring Batch 會依照此結果將代碼回傳給呼叫的方法。當 Job 還沒有執行結束前此欄位為空。 |
+| `createTime` | `java.util.Date` | 紀錄 JobExecution 第一次被持久化的時間。一個 Job 可能會沒有開始時間 ( `startTime` )，但一定會有被建立的時間 ( `createTime` )。 |
+| `lastUpdated` | `java.util.Date` | 紀錄 JobException 最後一次被持久化的時間。如果 Job 從來沒有被執行過，此欄位為空。 |
+| `executionContext` | | 一個存放在執行時期必要的使用者資料及屬性的環境。 | 
+| `failureExceptions` |  | 紀錄 Job 失敗拋出的 Exception 的 List，可以用來除錯。 |
+
+<br/>
+
+假設 `EndOfDate` Job 在2021/01/01 的早上 9：00 開始執行，然後在 9：30 執行失敗，那麼這些資訊就會被存在 batch metadata table ( 以當日日期時間當作是 JobParameters )：
+###### BATCH_JOB_INSTANCE
+| JOB_INST_ID | JOB_NAME |
 | --- | --- |
-| `status` | 代表執行時期的狀態，當執行時狀態會是 `BatchStatus#STARTED`；如果執行失敗，則狀態為 `BatchStatus#FAILED`；執行成功且完成的畫則是 `BatchStatus#COMPLETED`。 |
-| `startTime` | 當開始執行時會產生一個 `java.util.Date` 物件紀錄當前時間，在尚未執行前此欄位是空的。 |
-| `endTime` | 不管執行結果成功或失敗，一旦執行完成，就會產生 `java.util.Date` 物件記錄當前時間。 |
-| `exitStatus` | 執行結果的狀態，Spring Batch 會依照此結果將代碼回傳給呼叫的方法。當 Job 還沒有執行結束前此欄位為空。 |
-| `createTime` | A java.util.Date representing the current system time when the JobExecution was first persisted. The job may not have been started yet (and thus has no start time), but it always has a createTime, which is required by the framework for managing job level ExecutionContexts. |
-| `lastUpdated` | A java.util.Date representing the last time a JobExecution was persisted. This field is empty if the job has yet to start. |
-| `executionContext` |The "property bag" containing any user data that needs to be persisted between executions. | 
-| `failureExceptions` | The list of exceptions encountered during the execution of a Job. These can be useful if more than one exception is encountered during the failure of a Job. |
+| 1 | EndOfDayJob |
+
+###### BATCH_JOB_EXECUTION_PARAMS
+| JOB_EXECUTION_ID | TYPE_CD | KEY_NAME | DATE_VAL | IDENTIFYING |
+| --- | --- | --- | --- | --- |
+| 1 | DATE | schedule.Date | 2021-01-01 00:00:00 | TRUE |
+
+###### BATCH_JOB_EXECUTION
+| JOB_EXEC_ID | JOB_INST_ID | START_TIME | END_TIME | STATUS |
+| --- | --- | --- | --- | --- |
+| 1 | 1 | 2021-01-01 09:00 | 2021-01-01 09:30 | FAILED |
+
+接續上面的狀況，因為第一天的 `EndOfDate` Job 執行失敗，所以第二天重新開始執行。但第二天同樣也有自己的批次要實行，此時當天的批次任務會被安排在重新執行前一天失敗的批次任務之後。也就是說第二天預計執行的 Job 會被安排在 9：30 之後開始。由於前一天執行的批次失敗，不會重新去取得 Job 的設定來啟動 Job，但是因為傳入的當日日期時間，是所以 2021/01/02 執行的 JobInstance 跟 2021/01/01 執行的是不同的實例。具體紀錄如下：
+###### BATCH_JOB_INSTANCE
+| JOB_INST_ID | JOB_NAME |
+| --- | --- |
+| 1 | EndOfDayJob |
+| 2 | EndOfDayJob |
+
+###### BATCH_JOB_EXECUTION_PARAMS
+| JOB_EXECUTION_ID | TYPE_CD | KEY_NAME | DATE_VAL | IDENTIFYING |
+| --- | --- | --- | --- | --- |
+| 1 | DATE | schedule.Date | 2021-01-01 00:00:00 | TRUE |
+| 2 | DATE | schedule.Date | 2021-01-01 00:00:00 | TRUE |
+| 3 | DATE | schedule.Date | 2021-01-02 00:00:00 | TRUE |
+
+###### BATCH_JOB_EXECUTION
+| JOB_EXEC_ID | JOB_INST_ID | START_TIME | END_TIME | STATUS |
+| --- | --- | --- | --- | --- |
+| 1 | 1 | 2021-01-01 09:00 | 2021-01-01 09:30 | FAILED |
+| 2 | 1 | 2021-01-02 09:00 | 2021-01-02 09:30 | COMPLETED |
+| 3 | 2 | 2021-01-02 09:31 | 2021-01-02 10:29 | COMPLETED |
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/domain.html#job
