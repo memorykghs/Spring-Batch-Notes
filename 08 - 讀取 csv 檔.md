@@ -188,7 +188,7 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 }
 ```
 整體的轉換順序大致如下圖：<br/>
-![](images/7-1.png)
+![](images/8-1.png)
 <br/>
 
 如果不指定欄位名稱，依照被逗號分隔後的 `fieldSet` 位置來進行 mapping，方法如下：
