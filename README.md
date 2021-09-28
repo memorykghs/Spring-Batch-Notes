@@ -11,3 +11,9 @@
 * Conditional Flow
 
 * Job.split() &rArr; 非同步的做法，可以同時帶起所有的 Job
+
+* 建議順序
+  1. batch + job：是控制批次
+  2. step：控制批次流程
+  3. chuck：有關資料怎樣處理
+  4. chuck 還有特殊優化的 step
