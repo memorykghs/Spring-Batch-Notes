@@ -37,3 +37,8 @@
 * JobOperator 是去註冊 Job 的地方找，不是從 Springboot 的 pool 找 (Job 也可以 `@Autowired` 出來執行 )，但 JobOperator 不能塞 JobParamter，只能塞字串
 * JobRegistry 對誰註冊??
 * 可以自動註冊就不需要用 BatchConfig 手動註冊
+
+---
+
+1. 什麼時候會用到自訂 JobRepository?
+2. 
