@@ -25,6 +25,9 @@ public BatchConfigurer batchConfigurer(DataSource dataSource) {
 }
 ```
 
+## 配置 JobRepository
+其實只要在 Application 上使用 `@EnableBatchProcessing` 就會有預設的 JobRepository，當然 Spring Batch 也有提供客製化 JobRepository 的方法。
+
 ## 配置 JobLauncher
 當使用 `@EnableBatchProcessing` 標註時，同時也提供了一個默認的 `JobRegistry` 環境。
 最常看到時做 `JobLauncher` 介面的物件是 `SimpleJobLauncher`，並且只需要 `JobRepository` 的依賴，例：
