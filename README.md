@@ -41,4 +41,4 @@
 ---
 
 1. 什麼時候會用到自訂 JobRepository?
-2. 
+2. Writer Process 執行是全部讀完才往下送?

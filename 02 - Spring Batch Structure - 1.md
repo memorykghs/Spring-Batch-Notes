@@ -3,17 +3,17 @@
 ## Spring Batch 架構大綱
 | 物件 | 說明 |
 | --- | --- |
-Execution Context | 批次處理的執行環境，能夠將所需的餐處在處理任務的過程中進行傳遞
-JobRepository | 提供處理任務的持久畫操作，儲存Job、Step執行過程中的狀態及結果
-JobLauncher | 執行Job的入口，同時再啟動 Job 的時候可傳遞自定義參數
 Job | Spring Batch 的一個批次處理過程，定義了批處理具體的執行邏輯，封裝整個批次處理過程的實例，由一個或多個Step組成
 Step | 一個任務的具體的執行邏輯單位
 Item | 一條資料記錄
 ItemReader | 從資料來源讀取資料，讀取結束後會返回 `null`
-ItemProcessor | 對資料進行處理，如資料清洗、轉換、過濾、校驗等，Spring Batch 提供一個 `chunk` 參數，每次任務會寫入一個 `chunk` 的數據，而 `chunk` 的數量取決於任務啟動時候的配置
+Chunk | 給定數量的 Item 集合，可以視為一個資料區塊，讀取到 chunk 數量後，才進行 write 操作
+ItemProcessor | 對資料進行處理，如資料轉換、過濾、校驗等，每次任務會寫入一個 `chunk` ( 區塊 ) 的數據，而 `chunk` 的數量取決於任務啟動時候的配置
 ItemWriter | 寫入資料到指定目標
-Chunk | 給定數量的Item集合，如讀取到chunk數量後，才進行寫操作
-Tasklet | Step中具體執行邏輯，可重複執行
+Tasklet | Job 中的另一種執行邏輯，與 Step 不同，批次處理進行時只會被執行一次
+Execution Context | 批次處理的執行環境，能夠將所需的參數在處理任務的過程中進行傳遞
+JobRepository | 提供處理任務的持久化操作，儲存 Job、Step 執行過程中的狀態及結果
+JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自定義參數
 
 ## Job
 Job 是一個封裝整個批次處理的實體。跟其他的 Spring Project 一樣，Job 實體可以透過使用 XML 檔案或是 Java-based 的設定檔串接在一起，通常我們會稱這個檔案叫做 Job Configuration。而 Job 是整個流程最頂層的結構，示意圖如下：<br/>
@@ -48,7 +48,7 @@ Job Instance 之間需要靠 Job Parameters 區分。
 
 #### JobParameters
 上面提到 JobInstance 是靠不同的 JobParameters 來區分。如果同一個 Job，Job Name 相同，則 JobParameters 不相同；若是不同的 Job，則允許有相同的 Job Parameter。也就是說：
-> JobInstance = Job + identifying JobParameters
+> ![](/images/icon-info.png) JobInstance = Job + identifying JobParameters
 
 <br/>
 
@@ -67,7 +67,7 @@ JobParameter jobParameter = (new JobParameterBuilder(jobParameter, jobExplorer))
 ```
 
 #### JobExecution
-JobExecution 是一個概念，同一個 JobInstance 不同次的執行，不管成功或失敗都會產生不同的 JobExecution。假設 `EndOfDay` 這個 Job 在 2021-01-01 時執行失敗，再重新啟動一次，這時候就會產生新的 JobExecution，不過仍然是使用同一個 JobInstance。JobExecution 的儲存機制 ( storage mechanism ) 會記錄在執行時期相關的屬性，這些屬性會被持久化保存。
+JobExecution 是一個紀錄 Job 執行狀態的物件。同一個 JobInstance 不同次的執行，不管成功或失敗都會產生不同的 JobExecution。假設 `EndOfDay` 這個 Job 在 2021-01-01 時執行失敗，再重新啟動一次，這時候就會產生新的 JobExecution，不過仍然是使用同一個 JobInstance。JobExecution 的儲存機制 ( storage mechanism ) 會記錄在執行時期相關的屬性，這些屬性會被持久化保存。
 
 | Property | Type | Definition |
 | --- | --- | --- |
