@@ -1,3 +1,7 @@
+# 09 - Restart
+重啟 ( restart ) 指的是當特定的 `JobInstance` 的 `JobExecution` 存在的情況下，Job 又重新被 launch 的狀況，也就是說，重啟的設定是針對 Job 物件。Spring Batch 中的 Job 預設都可以在其原本失敗的地方被重啟，繼續往下執行 ( 當然也有例外 )。
+
+既然 Job 預設可以被 restart，也可以將 Job 設定為不可重新啟動。只要在使用 `JobBuilderFactory` 建立 Job 時加上 `preventRestart()` 即可。
 
 * `Skip` — A line in the flat file is incorrectly formatted. You don’t want to stop the job execution because of a couple of bad lines: this could mean losing an unknown amount of updates and inserts. You can tell Spring Batch to skip the line that caused the item reader to throw an exception on a formatting error.
 <br/>
