@@ -42,3 +42,8 @@
 
 1. 什麼時候會用到自訂 JobRepository?
 2. Writer Process 執行是全部讀完才往下送?
+
+---
+
+## 其他
+* [10 Handy Spring Batch Tricks](https://levelup.gitconnected.com/10-handy-spring-batch-tricks-24556cf549a4)
