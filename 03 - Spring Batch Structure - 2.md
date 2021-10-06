@@ -16,30 +16,56 @@ JobRepository | 提供處理任務的持久化操作，儲存 Job、Step 執行�
 JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自定義參數
 
 ## Step
-一個 Job 內可以有多個 Step，Step 是真正控制批次流程的物件。Step 內可以使用 ItemReader、ItemProcss、ItemWriter 等物件操作資料。而 Step 也有自己的 StepExecution。
+一個 Job 內可以有多個 Step，Step 是真正控制批次流程的物件。Step 內可以使用 ItemReader、ItemProcss、ItemWriter 等物件操作資料。而 Step 也有自己的 StepExecution，對應的表格是 `BATCH_STEP_EXECUTION`。
 
 #### StepExecution
 定義有點像 JobExecution，不過只有當 Step 開始被真正執行時才會持久化。一個 StepExecution 會關連到一個 JobExecution。另外，StepExecution 會儲存許多當次運行 Step 相關的資料，並且持久化一些 Spring Batch 的屬性。<br/>
 ![](/images/3-1.png)
 
-| Property | Type | Definition |
-| --- | --- | --- |
-| `status` | | 代表執行時期的狀態，當執行時狀態會是 `BatchStatus#STARTED`；<br/>如果執行失敗，則狀態為 `BatchStatus#FAILED`；<br/>執行成功且完成的畫則是 `BatchStatus#COMPLETED`。 |
-| `startTime` | `java.util.Date` | 紀錄開始執行時當前的時間，在尚未執行前此欄位微空。 |
-| `endTime` | `java.util.Date` | 紀錄執行完成的時間，不管執行結果成功或失敗。執行未完成前此欄位為空。 |
-| `exitStatus` | | 執行結果的狀態，Spring Batch 會依照此結果將代碼回傳給呼叫的方法。當 Step 還沒有執行結束前此欄位為空。 |
-| `executionContext` | | 一個存放在執行時期必要的使用者資料及屬性的環境。 |
-| `readCount` | | 紀錄實際上有多少筆資料被成功讀取。 |
-| `writeCount` | | 紀錄實際上有多少筆資料被成功輸出 ( write )。 |
-| `commitCount` |  | 紀錄多少交易在該次執行被 commit。 |
-| `rollbackCount` |  | 紀錄多少交易在該次執行被 rollback。 |
-| `readSkipCount` |  | 紀錄當讀取失敗並 skip 的次數。 |
-| `processSkipCount` |  | 紀錄 process 執行失敗並 skip 的次數。 |
-| `filterCount` |  | 紀錄被過濾的物件資料筆數。 |
-| `writeSkipCount` |  | 紀錄執行 write 時失敗並 skip 的次數。 |
+###### BATCH_STEP_EXECUTION
+| 屬性 | 說明 |
+| --- | ---|
+`STEP_EXECUTION_ID` | 主鍵。程式面可以透過 `StepExecution` 物件的 `getId()` 方法取得。
+`VERSION` | 版本號
+`STEP_NAME` | Step 的名稱，可以在使用 `StepBuilderFactory` 建立 Step 物件時設定。
+`JOB_EXECUTION_ID` | 對應 `BATCH_JOB_EXECUTION` 表格的外來鍵。代表這個 StepExecution 屬於哪個 JobExecution。
+`START_TIME` | 紀錄開始執行時當前的時間。
+`END_TIME` | 紀錄執行完成的時間，不管執行結果成功或失敗。執行未完成前此欄位為空。
+`STATUS` | 代表執行時期的狀態，當執行時狀態會是 `BatchStatus#STARTED`；如果執行失敗，則狀態為 `BatchStatus#FAILED`；執行成功且完成的畫則是 `BatchStatus#COMPLETED`。
+`COMMIT_COUNT` | 紀錄執行期間已提交的事務的次數
+`READ_COUNT` | 執行過程中成功讀取的項目數量
+`FILTER_COUNT` | 執行過程中過濾的項目數量
+`WRITE_COUNT` | 執行過程中寫入和提交的項目數量
+`READ_SKIP_COUNT` | 執行過程中跳過不讀取的項目數量
+`WRITE_SKIP_COUNT` | 執行過程中跳過不寫入的項目數量
+`PROCESS_SKIP_COUNT` | 執行過程中 Process 跳過的項目數量
+`ROLLBACK_COUNT` | 執行期間 rollback 的次數，包括每次重試 ( retry ) 及跳過 ( skip ) 造成的 rollback 次數。
+`EXIT_CODE` | 執行結果的狀態，Spring Batch 會依照此結果將代碼回傳給呼叫的方法。當 Step 還沒有執行結束前此欄位為空。
+`EXIT_MESSAGE` | 作業執行跳出的詳細的描述。再失敗的情況下，會包含失敗例外的 stackTrace。
+`LAST_UPDATED` | 代表上一次執行的時間。
+<br/>
+
+![](/images/3-2.png)
 
 ## ExecutionContext
-ExecutionContext 是一個由 Spring Batch 框架持久化和控制的鍵值對 ( `key / value pair` ) 的集合，可以讓開發人員用來儲存 StepExecution 或 JobExecution 的持久化對象。restart 就是一個常見的例子，假設今天是從檔案中讀取資料，Spring Batch 框架會在 commit 之前定期保留 ExecutionContext 對象，這樣 ItemReader 在運行期間如果發生錯誤而停止，下次啟動就可以依照 ExecutionContext 內紀錄的狀態，從前一次停止的地方重新開始。
+ExecutionContext 是一個由 Spring Batch 框架持久化和控制的鍵值對 ( `key / value pair` ) 的集合，可以讓開發人員用來儲存 StepExecution 或 JobExecution 的持久化對象。restart 就是一個常見的例子。Spring Batch 會將 ExecutionContext 的內容持久化到資料庫中，以方便後續重起的時候，直接從資料庫中讀取資訊，並且讓批次任務從失敗的地方繼續執行。對應的表為 `BATCH_STEP_EXECUTION_CONTEXT` 和 `BATCH_JOB_EXECUTION_CONTEXT`。
+<br/>
+
+###### BATCH_STEP_EXECUTION_CONTEXT
+| 屬性 | 說明 |
+| --- | ---|
+`STEP_EXECUTION_ID` | 關連到 `BATCH_STEP_EXECUTION` 表格的外鍵，可以對應到多個 StepExecution。
+`SHORT_CONTEXT` | `SERIALIZED_CONTEXT` ( 字串 )
+`SERIALIZED_CONTEXT` | 整格執行環境序列化
+<br/>
+
+###### BATCH_JOB_EXECUTION_CONTEXT
+| 屬性 | 說明 |
+| --- | ---|
+`JOB_EXECUTION_ID` | 關連到 `BATCH_JOB_EXECUTION` 表格的外鍵，可以對應到多個 JobExecution。
+`SHORT_CONTEXT` | `SERIALIZED_CONTEXT` ( 字串 )
+`SERIALIZED_CONTEXT` | 整格執行環境序列化
+<br/>
 
 還有重要的一點是，當 Step 執行期間，只會存在一個 ExecutionContext，如果同時有多個 Job 被執行，那麼 ExecutionContext 的狀態會被影響，因為他們是共用同一個 keyspace。
 
@@ -75,9 +101,53 @@ Job job = context.getBean(JobRegistry.class).getJob(jobName);
 context.getBean(JobLauncher.class).run(job, createJobParams());
 ```
 
+## ItemReader
+
+## ItemWriter
+
+## ItemProcessor
+
+## Spring Batch 表格相關
+前一章以及本章提到的一些用於紀錄狀態的表格結構 UML 如下：<br/>
+![](/images/3-3.png)
+
+表格可以手動新增或是透過 properties 設定自動在 DB 產生。
+
+#### 手動新增
+1. 可以在本機以下的路徑找到使用的 Spring Batch Core 的版本。
+   ```
+   C:\Users\user\.m2\repository\org\springframework\batch\spring-batch-core\4.2.0.RELEASE
+   ```
+   <br/>
+   
+   ![](/images/3-4.png)
+
+2. 在該 jar 檔上按右鍵，選擇以 WinRAR 或同類型的應用程式開啟。
+
+   ![](/images/3-5.png)
+
+3. 依照以下路徑進入資料夾，會看到該層下有給不同 DB 使用的 SQL schema 檔案。
+   ```
+   org/srpingframework/batch/core
+   ```
+   ![](/images/3-6.png)
+
+4. 選擇相對應的 DB 打開檔案就會有 SQL 了。
+
+#### 透過 properties 設定
+在 `application.properties` 檔案中設定。
+```properties
+# 不自動產生
+spring.batch.initialize-schema=never
+
+# 自動產生
+spring.batch.initialize-schema=always
+```
+
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/domain.html#job
 * https://www.docs4dev.com/docs/zh/spring-batch/4.1.x/reference/domain.html#domainLanguageOfBatch
 * https://blog.csdn.net/whxjason/article/details/108817354
 * https://blog.csdn.net/qq_40406929/article/details/118516843
 * https://blog.csdn.net/guo_xl/article/details/83444983
+* http://www.4k8k.xyz/article/huanyuminhao/110187739
