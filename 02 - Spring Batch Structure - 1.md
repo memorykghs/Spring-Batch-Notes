@@ -15,6 +15,10 @@ Execution Context | 批次處理的執行環境，能夠將所需的參數在處
 JobRepository | 提供處理任務的持久化操作，儲存 Job、Step 執行過程中的狀態及結果
 JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自定義參數
 
+除了以上物件，Spring Batch 還會有六張表格用來記錄批次執行相關的資訊：
+1. `BATCH_JOB_INSTANCE`
+2. `BATCH_JOB_EXECUTION_PARAMS`
+
 ## Job
 Job 是一個封裝整個批次處理的實體。跟其他的 Spring Project 一樣，Job 實體可以透過使用 XML 檔案或是 Java-based 的設定檔串接在一起，通常我們會稱這個檔案叫做 Job Configuration。而 Job 是整個流程最頂層的結構，示意圖如下：<br/>
 ![](/images/2-1.png)
@@ -44,7 +48,19 @@ Job 執行時期會產生一個 JobInstance ( 作業實例 )，每一次啟動 J
   * 根據設置的 JobParameters 從 JobRepository 中獲取
   * 如果 Job Repository 中沒有拿到，則建立新的 JobInstance
 
-Job Instance 之間需要靠 Job Parameters 區分。
+同一個 Job 可能會產生不同的 JobInstance，JobInstance 之間需要靠 JobParameters 區分。由於可能產生不同的實例，在運行的時候必須記錄 Job 每次執行的情況，相關資訊會被記錄在 `BATCH_JOB_INSTANCE` 表格中。
+<br/>
+
+###### BATCH_JOB_INSTANCE
+| 屬性 | 說明 |
+| --- | ---|
+| `JOB_INSTANCE_ID` | 此表格的主鍵 |
+| `VERSION` | Job 版本號 |
+| `JOB_NAME` | 從 Job 物件取得的作業名稱，可以在 JobConfig 設定 |
+| `JOB_KEY`	| 執行時 Spring Batch 會將傳入的 JobParameter 序列化之後取得的值，可以依照這個唯一值判斷相同作業的不同實例。JobInstance 可以有相同的作業名稱，但 `JOB_KEY` 欄位的值一定會不同。
+
+從下面這張圖就可以看到雖然 `JOB_NAME` 都叫做 `outputDwDaliyJob`，但是他們的 `JOB_KEY` 不同。<br/>
+![](/images/2-5.png)
 
 #### JobParameters
 上面提到 JobInstance 是靠不同的 JobParameters 來區分。如果同一個 Job，Job Name 相同，則 JobParameters 不相同；若是不同的 Job，則允許有相同的 Job Parameter。也就是說：
@@ -54,17 +70,21 @@ Job Instance 之間需要靠 Job Parameters 區分。
 
 ![](/images/2-3.png)
 
-JobParameters 可以有4種不同的型別：`String`、`Date`、`Long` 或 `Double`。我們可以透過 cmd 來執行一個 Job，傳入的參數是 `schedule.date(date) = 2021/09/19`：
-```cmd
-java CommandLineJobRunner io.spring.EndOfDayConfiguration endOfDate schedule.date(date)=2021/09/19
-```
-
-CommandLineJobRunner 是 Spring Batch 提供的一個具有 `main` 方法的類別，指令內指定從 `io.spring.EndOfDayConfiguration` 這個有標註 `@Configuration` 的檔案中依照設定建立 Job；接下來的 `endOfDate` 則是 Job 的名稱，也就是產生 Job 的 `@Bean` 方法中設定。最後的 `schedule.date(date)=2021/09/19` 是傳入的 JobParameters。
-
-另外，Spring Batch 框架也提供了通過 `JobParametersBuilder` 類別來建構參數：
+JobParameters 可以有4種不同的型別：`String`、`Date`、`Long` 或 `Double`。Spring Batch 框架提供通過 `JobParametersBuilder` 類別來建構參數的方法：
 ```java
 JobParameter jobParameter = (new JobParameterBuilder(jobParameter, jobExplorer)).getNextJobParameters(job).toJobParameters();
 ```
+
+與 JobParameter 相關的資訊會紀錄在 `BATCH_JOB_EXECUTION_PARAMS` 表格中。
+<br/>
+
+###### BATCH_JOB_EXECUTION_PARAMS
+| 屬性 | 說明 |
+| --- | ---|
+| `JOB_INSTANCE_ID` | 此表格的主鍵 |
+| `VERSION` | Job 版本號 |
+| `JOB_NAME` | 從 Job 物件取得的作業名稱，可以在 JobConfig 設定 |
+| `JOB_KEY`	| 執行時 Spring Batch 會將傳入的 JobParameter 序列化之後取得的值，可以依照這個唯一值判斷相同作業的不同實例。JobInstance 可以有相同的作業名稱，但 `JOB_KEY` 欄位的值一定會不同。
 
 #### JobExecution
 JobExecution 是一個紀錄 Job 執行狀態的物件。同一個 JobInstance 不同次的執行，不管成功或失敗都會產生不同的 JobExecution。假設 `EndOfDay` 這個 Job 在 2021-01-01 時執行失敗，再重新啟動一次，這時候就會產生新的 JobExecution，不過仍然是使用同一個 JobInstance。JobExecution 的儲存機制 ( storage mechanism ) 會記錄在執行時期相關的屬性，這些屬性會被持久化保存。
@@ -125,3 +145,4 @@ JobExecution 是一個紀錄 Job 執行狀態的物件。同一個 JobInstance �
 * https://blog.csdn.net/whxjason/article/details/108817354
 * https://blog.csdn.net/qq_40406929/article/details/118516843
 * https://blog.csdn.net/guo_xl/article/details/83444983
+* http://www.4k8k.xyz/article/huanyuminhao/110187739
