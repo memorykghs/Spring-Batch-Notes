@@ -16,12 +16,12 @@ JobRepository | 提供處理任務的持久化操作，儲存 Job、Step 執行�
 JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自定義參數
 
 除了以上物件，Spring Batch 還會有 6 張表格用來記錄批次執行相關的資訊：
-1. `BATCH_JOB_INSTANCE`
-2. `BATCH_JOB_EXECUTION_PARAMS`
-3. `BATCH_JOB_EXECUTION`
-4. `BATCH_STEP_EXECUTION`
-5. `BATCH_STEP_EXECUTION_CONTEXT`
-6. `BATCH_JOB_EXECUTION_CONTEXT`
+1. `BATCH_JOB_INSTANCE` &longleftrightarrow; `JobInstance`
+2. `BATCH_JOB_EXECUTION_PARAMS` &longleftrightarrow; `JobExecution`
+3. `BATCH_JOB_EXECUTION` &longleftrightarrow; `JobParameters`
+4. `BATCH_STEP_EXECUTION` &longleftrightarrow; `StepExecution`
+5. `BATCH_STEP_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
+6. `BATCH_JOB_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
 
 以及 3 個用來產生 ID 的序列：
 1. `BATCH_STEP_EXECUTION_SEQ`
@@ -133,16 +133,19 @@ Job 定義了 Job 是什麼以及如何執行 Job，而 JobInstance 是一個執
 | JOB_INST_ID | JOB_NAME |
 | --- | --- |
 | 1 | EndOfDayJob |
+<br/>
 
 ###### BATCH_JOB_EXECUTION_PARAMS
 | JOB_EXECUTION_ID | TYPE_CD | KEY_NAME | DATE_VAL | IDENTIFYING |
 | --- | --- | --- | --- | --- |
 | 1 | DATE | schedule.Date | 2021-01-01 00:00:00 | TRUE |
+<br/>
 
 ###### BATCH_JOB_EXECUTION
 | JOB_EXEC_ID | JOB_INST_ID | START_TIME | END_TIME | STATUS |
 | --- | --- | --- | --- | --- |
 | 1 | 1 | 2021-01-01 09:00 | 2021-01-01 09:30 | FAILED |
+<br/>
 
 接續上面的狀況，因為第一天的 `EndOfDate` Job 執行失敗，所以第二天重新開始執行。但第二天同樣也有自己的批次要實行，此時當天的批次任務會被安排在重新執行前一天失敗的批次任務之後。也就是說第二天預計執行的 Job 會被安排在 9：30 之後開始。由於前一天執行的批次失敗，不會重新去取得 Job 的設定來啟動 Job，但是因為傳入的當日日期時間，是所以 2021/01/02 執行的 JobInstance 跟 2021/01/01 執行的是不同的實例。具體紀錄如下：
 ###### BATCH_JOB_INSTANCE

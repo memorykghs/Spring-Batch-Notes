@@ -26,8 +26,6 @@
   step1成功，step2失敗
   若要step1要一起重跑，就要加 allowStartComplete
 
-* D:\Users\.m2\repository\org\springframework\batch\spring-batch-core\4.1.0.RELEASE 以 winrar 開啟
-
 * 使用 JobOperator 取得 Job 名稱在 Controller 中啟動，會認不得，因為不是 `@Autowired` 出來，並沒有註冊在 Spring IOC 內
   1. JobRegistry
   2. JobLauncher
@@ -44,6 +42,10 @@
 2. Writer Process 執行是全部讀完才往下送?
 
 ---
+## Test
+- [ ] Spring Batch 例外處理
+- [ ] 非同步搭配執行緒
+- [ ] 將兩個 Writer 合併成一個
 
 ## 其他
 * [10 Handy Spring Batch Tricks](https://levelup.gitconnected.com/10-handy-spring-batch-tricks-24556cf549a4)

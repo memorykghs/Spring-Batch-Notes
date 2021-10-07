@@ -15,6 +15,14 @@ Execution Context | 批次處理的執行環境，能夠將所需的參數在處
 JobRepository | 提供處理任務的持久化操作，儲存 Job、Step 執行過程中的狀態及結果
 JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自定義參數
 
+資料表對應：
+1. `BATCH_JOB_INSTANCE` &longleftrightarrow; `JobInstance`
+2. `BATCH_JOB_EXECUTION_PARAMS` &longleftrightarrow; `JobExecution`
+3. `BATCH_JOB_EXECUTION` &longleftrightarrow; `JobParameters`
+4. `BATCH_STEP_EXECUTION` &longleftrightarrow; `StepExecution`
+5. `BATCH_STEP_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
+6. `BATCH_JOB_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
+
 ## Step
 一個 Job 內可以有多個 Step，Step 是真正控制批次流程的物件。Step 內可以使用 ItemReader、ItemProcss、ItemWriter 等物件操作資料。而 Step 也有自己的 StepExecution，對應的表格是 `BATCH_STEP_EXECUTION`。
 
@@ -59,6 +67,8 @@ ExecutionContext 是一個由 Spring Batch 框架持久化和控制的鍵值對 
 `SERIALIZED_CONTEXT` | 整格執行環境序列化
 <br/>
 
+![](/images/3-4.png)
+
 ###### BATCH_JOB_EXECUTION_CONTEXT
 | 屬性 | 說明 |
 | --- | ---|
@@ -66,6 +76,8 @@ ExecutionContext 是一個由 Spring Batch 框架持久化和控制的鍵值對 
 `SHORT_CONTEXT` | `SERIALIZED_CONTEXT` ( 字串 )
 `SERIALIZED_CONTEXT` | 整格執行環境序列化
 <br/>
+
+![](/images/3-5.png)
 
 還有重要的一點是，當 Step 執行期間，只會存在一個 ExecutionContext，如果同時有多個 Job 被執行，那麼 ExecutionContext 的狀態會被影響，因為他們是共用同一個 keyspace。
 
@@ -146,8 +158,10 @@ spring.batch.initialize-schema=always
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/domain.html#job
+* https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/schema-appendix.html#metaDataSchema
 * https://www.docs4dev.com/docs/zh/spring-batch/4.1.x/reference/domain.html#domainLanguageOfBatch
 * https://blog.csdn.net/whxjason/article/details/108817354
 * https://blog.csdn.net/qq_40406929/article/details/118516843
 * https://blog.csdn.net/guo_xl/article/details/83444983
 * http://www.4k8k.xyz/article/huanyuminhao/110187739
+
