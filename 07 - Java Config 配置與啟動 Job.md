@@ -68,6 +68,14 @@ public class BatchConfig extends DefaultBatchConfigurer {
 ```
 首先會先在 `BatchConfig.java` 這個類別上加上 `@EnableBatchProcessing` 註解，讓我們可以運行 Spring Batch。加上註解後，Spring 會自動幫我們產生與 Spring Batch 相關的 Bean，並將這些 Bean 交給 Spring 容器管理。
 
+## 啟動 Job
+
+在使用 Java Config 執行 Spring Batch 的 Job 時，如果不做任何配置，專案在啟動時預設就會執行定義好的 Job，這也就是為什麼會在 console 看到批次 Listener 出現 2 次的原因。如果不想要在專案啟動時執行批次，可以在 `application.properties` 檔案中新增以下設定：
+
+```properties
+spring.batch.job.enabled=false
+```
+
 ## CommendLine
 我們可以透過 cmd 來執行一個 Job，傳入的參數是 `schedule.date(date) = 2021/09/19`：
 ```
@@ -79,3 +87,4 @@ CommandLineJobRunner 是 Spring Batch 提供的一個具有 `main` 方法的類�
 ## 參考
 * https://blog.csdn.net/Chris___/article/details/103352103
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/job.html#javaConfig
+* https://www.gushiciku.cn/pl/gDAV/zh-tw

@@ -1,7 +1,9 @@
-# 04 - 建立 Job 與 JobListener
-
+# 04 - 讀取資料庫與建立 Job 與 JobListener
 ## 建立 Job
-首先建立一個設定 Job 的 class `BCHBORED001JobConfig`，在這個檔案裡面我們會注入 `JobBuilderFactory` 來建立 Job。Job 本身是一個 interface，實作 Job 的實體類別有像是 `AbstractJob`、`FlowJob`、`GroupAwareJob`、`JsrFlowJob` 以及 `SimpleJob`......等等。而 `JobBuilderFactory` 是基於 Builder Design Pattern 概念設計的，所以在建立 Job 的過程中可以一直串接方法，直到最後用 `build()` 結尾。
+假設現在的需求是需要從資料庫讀取數據，整理資料後寫入另外一張表格。為了達到這個目的，首先建立一個用來設定 Job 的 class `BCHBORED001JobConfig`，在這個檔案裡面我們會注入 `JobBuilderFactory` 來建立 Job。
+
+Job 本身是一個 interface，實作 Job 的實體類別有像是 `AbstractJob`、`FlowJob`、`GroupAwareJob`、`JsrFlowJob` 以及 `SimpleJob`......等等。而 `JobBuilderFactory` 是基於 Builder Design Pattern 概念設計的，所以在建立 Job 的過程中可以一直串接方法，直到最後用 `build()` 結尾。
+
 由於最終是要對 spring 容器注入設定好的 Job，在 `BCHBORED001JobConfig.java` 內會以方法搭配 `@Bean` 來產生 Job。
 
 ```

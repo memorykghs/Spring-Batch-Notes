@@ -114,10 +114,15 @@ context.getBean(JobLauncher.class).run(job, createJobParams());
 ```
 
 ## ItemReader
+ItemReader 是一個定義讀資料類別行為的 interface，當資料讀取結束會回傳 `null`，來告訴後續操作讀取結束。ItemReader 在讀取資料的過程中是不能對資料進行操作的。Spring Batch 為 ItemReader 提供非常多的實現類，例如 JdbcPagingItemReader、JdbcCursorItemReader 等等。ItemReader 支援讀入的資料來源也很多，包括各種型別的資料庫、檔案、資料流等等。ItemReader 的類型可以參考 [ItemReader 列表](https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/appendix.html#listOfReadersAndWriters)。
 
 ## ItemWriter
+相對於 ItemReader，ItemWriter 主要針對批次處理資料區塊的輸出定義行為。ItemWriter 寫資料的單位是可以設定的，可以一次寫一筆資料，也可以一次寫一個 chunk 的資料。然而跟 ItemReader 相同，ItemWriter 無法對接收的資料進行資料操作或處理。
+
+Spring Batch 為 ItemWriter 提供許多實現類，當然我們也可以去自定義 ItemWriter。其他類型的 ItemWriter 可以參考官網提供的 [ItemWriter 列表](https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/appendix.html#itemWritersAppendix)。
 
 ## ItemProcessor
+ItemProcessor 主要是對毒入的資料進行處理，當 ItemReader 讀到一條資料後，在 ItemWriter 尚未寫入這條資料之前，可以透過 ItemProcessor 提供的功能對資料進行業務邏輯處理。如果處理的過程中，該筆資料不應該繼續往下一個步驟 ( 通常是 ItemWriter ) 傳遞，就回傳 `null`。
 
 ## Spring Batch 表格相關
 前一章以及本章提到的一些用於紀錄狀態的表格結構 UML 如下：<br/>
