@@ -17,8 +17,8 @@ JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自�
 
 除了以上物件，Spring Batch 還會有 6 張表格用來記錄批次執行相關的資訊：
 1. `BATCH_JOB_INSTANCE` &longleftrightarrow; `JobInstance`
-2. `BATCH_JOB_EXECUTION_PARAMS` &longleftrightarrow; `JobExecution`
-3. `BATCH_JOB_EXECUTION` &longleftrightarrow; `JobParameters`
+2. `BATCH_JOB_EXECUTION_PARAMS` &longleftrightarrow; `JobParameters`
+3. `BATCH_JOB_EXECUTION` &longleftrightarrow; `JobExecution`
 4. `BATCH_STEP_EXECUTION` &longleftrightarrow; `StepExecution`
 5. `BATCH_STEP_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
 6. `BATCH_JOB_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`

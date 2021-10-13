@@ -17,8 +17,8 @@ JobLauncher | 執行 Job 的入口，同時在啟動 Job 的時候可傳遞自�
 
 資料表對應：
 1. `BATCH_JOB_INSTANCE` &longleftrightarrow; `JobInstance`
-2. `BATCH_JOB_EXECUTION_PARAMS` &longleftrightarrow; `JobExecution`
-3. `BATCH_JOB_EXECUTION` &longleftrightarrow; `JobParameters`
+2. `BATCH_JOB_EXECUTION_PARAMS` &longleftrightarrow; `JobParameters`
+3. `BATCH_JOB_EXECUTION` &longleftrightarrow; `JobExecution`
 4. `BATCH_STEP_EXECUTION` &longleftrightarrow; `StepExecution`
 5. `BATCH_STEP_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
 6. `BATCH_JOB_EXECUTION_CONTEXT` &longleftrightarrow; `ExecutionContext`
@@ -67,7 +67,7 @@ ExecutionContext 是一個由 Spring Batch 框架持久化和控制的鍵值對 
 `SERIALIZED_CONTEXT` | 整格執行環境序列化
 <br/>
 
-![](/images/3-4.png)
+![](/images/3-7.png)
 
 ###### BATCH_JOB_EXECUTION_CONTEXT
 | 屬性 | 說明 |
@@ -77,7 +77,7 @@ ExecutionContext 是一個由 Spring Batch 框架持久化和控制的鍵值對 
 `SERIALIZED_CONTEXT` | 整格執行環境序列化
 <br/>
 
-![](/images/3-5.png)
+![](/images/3-8.png)
 
 還有重要的一點是，當 Step 執行期間，只會存在一個 ExecutionContext，如果同時有多個 Job 被執行，那麼 ExecutionContext 的狀態會被影響，因為他們是共用同一個 keyspace。
 
@@ -156,6 +156,9 @@ ItemProcessor 主要是對毒入的資料進行處理，當 ItemReader 讀到一
 ```properties
 # 不自動產生
 spring.batch.initialize-schema=never
+
+# 2.5.5版的 spring 推薦使用以下設定
+spring.batch.jdbc.initialize-schema=never
 
 # 自動產生
 spring.batch.initialize-schema=always
