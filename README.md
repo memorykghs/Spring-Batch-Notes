@@ -50,3 +50,5 @@
 
 ## 其他
 * [10 Handy Spring Batch Tricks](https://levelup.gitconnected.com/10-handy-spring-batch-tricks-24556cf549a4)
+* [Clear Batch Data Log](https://github.com/arey/spring-batch-toolkit/blob/spring-batch-toolkit-4.0.0/src/main/java/com/javaetmoi/core/batch/tasklet/RemoveSpringBatchHistoryTasklet.java)
+* [HikariConfig](https://github.com/brettwooldridge/HikariCP/blob/dev/src/main/java/com/zaxxer/hikari/HikariConfig.java)
