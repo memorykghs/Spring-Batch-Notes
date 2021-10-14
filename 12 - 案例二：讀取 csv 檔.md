@@ -1,8 +1,36 @@
 # 12 - 讀取 csv 檔
-上一章提到 Spring Batch 的讀取資料來源大致上可以分為三種，下面的例子將以讀取 csv 檔為例。最常用的讀取檔案的 ItemReader 是 FlatFileItemReader。FlatFile 是**扁平結構檔案** ( 也稱為矩陣結構檔案 )，是最常見的一種檔案型別。讀取時通常以一行 ( line ) 為一個單位，同一行資料的欄位支間可以用某種方式切割，例如常見的分號 `;`、逗號 `,`，或是索引 ( index ) 等等。與一般的 JSON、XML 檔案的差別在於他沒有一個特定的結構，所以在讀取的時候需要定義讀取及轉換的規則。
+前面有提到 Spring Batch 的讀取資料來源大致上可以分為三種，下面的例子將以讀取 csv 檔為例。最常用的讀取檔案的 ItemReader 是 FlatFileItemReader。FlatFile 是**扁平結構檔案** ( 也稱為矩陣結構檔案 )，是最常見的一種檔案型別。與 JSON、XML 檔案的差別在於 FlatFile 沒有一個特定的結構，所以在讀取的時候需要定義讀取及轉換的規則。
+
+一般來說，平面文件可以分成兩種切割方式：
+1. `delimited`：以某個特殊符號或規則劃分
+2. `fixed length`：以長度劃分
+
+讀取時通常以一行 ( line ) 為一個單位，同一行資料的欄位支間可以用某種方式切割。如果是 `delimited` 的畫，比較常見的切割符號有分號 `;`、逗號 `,` 等等。若是以長度切分的化，就要在程式內設定每個欄位的長度。
+
+## FieldSet
+在 Spring Batch 中，不管是用於 input 或是 output，有一個很重要的類別 `FieldSet`。`FieldSet` 是 Spring Batch 中的一個抽象概念，主要是用來 binding 文件資源。
+
+> A FieldSet is Spring Batch’s abstraction for enabling the binding of fields from a file resource.
+
+講的簡單一點，他的概念有點類似於 JDBC 的 `ResultSet`。而 `FieldSet` 需要傳入一個 String 陣列的參數，在來也可以另外設定每個 `Field` 的名稱，就可以透過索引 ( index ) 或名稱 ( names ) 的 pattern 來取得對應的 `Feild`。例子如下：
+```java
+String[] tokens = new String[]{"foo", "1", "true"};
+FieldSet fs = new DefaultFieldSet(tokens);
+
+// 讀取資料
+String name = fs.readString(0);
+int value = fs.readInt(1);
+boolean booleanValue = fs.readBoolean(2);
+```
+`FieldSet` 可以指定讀取出來的物件型別，上面的例子就分別用 `readString()`、`readInt()` 跟 `readBoolean()` 來讀取一個 `FieldSet` 中的內容，並以 index 指定讀取陣列內的第幾個元素。
+
+以下提供幾個 `FieldSet` 的方法：<br/>
+
+![](/images/12-3.png)
+
 
 ## 建立 FlatFileItemReader
-Spring Batch 為檔案讀取提供了 FlatFileItemReader 類別，並提供一些方法用來讀取資料和轉換。在 FlatFileItemReader 中有2個主要的功能介面：Resource 及 LineMapper。 Resource 用於外部檔案讀取，例如：
+Spring Batch 為檔案讀取提供了 FlatFileItemReader 類別，並提供一些方法用來讀取資料和轉換。在 FlatFileItemReader 中有 2 個主要的功能介面：[Resource](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#resources) 及 LineMapper。 Resource 用於外部檔案讀取，例如：
 
 ```java
 Resource resource = new FileSystemResource("resources/書單.csv"); 
