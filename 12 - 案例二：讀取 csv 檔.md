@@ -13,6 +13,7 @@
 > A FieldSet is Spring Batch’s abstraction for enabling the binding of fields from a file resource.
 
 講的簡單一點，他的概念有點類似於 JDBC 的 `ResultSet`。而 `FieldSet` 需要傳入一個 String 陣列的參數，在來也可以另外設定每個 `Field` 的名稱，就可以透過索引 ( index ) 或名稱 ( names ) 的 pattern 來取得對應的 `Feild`。例子如下：
+
 ```java
 String[] tokens = new String[]{"foo", "1", "true"};
 FieldSet fs = new DefaultFieldSet(tokens);
@@ -28,96 +29,16 @@ boolean booleanValue = fs.readBoolean(2);
 
 ![](/images/12-3.png)
 
-
-## 建立 FlatFileItemReader
+## FlatFileItemReader
 Spring Batch 為檔案讀取提供了 FlatFileItemReader 類別，並提供一些方法用來讀取資料和轉換。在 FlatFileItemReader 中有 2 個主要的功能介面：[Resource](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#resources) 及 LineMapper。 Resource 用於外部檔案讀取，例如：
 
 ```java
 Resource resource = new FileSystemResource("resources/書單.csv"); 
 ```
 
-那麼接下來，先建立一個 FlatFileItemReader。
-```
-spring.batch.springBatchPractice.job
-  |--BCHBORED001JobConfig.java // 修改
-spring.batch.springBatchPractice.listener
-  |--BCHBORED001JobListener.java
-  |--BCHBORED001ReaderListener.java // 新增
-```
-<br/>
+他們之間的關係大致如下圖：<br/>
+![](/images/12-1.png)
 
-* `BCHBORED001JobConfig.java`
-```java
-public class BCHBORED001JobConfig {
-
-  /** JobBuilderFactory */
-  @Autowired
-  private JobBuilderFactory jobBuilderFactory;
-
-  /** StepBuilderFactory */
-  @Autowired
-  private StepBuilderFactory stepBuilderFactory;
-
-  /** 每批件數 */
-  private static final int FETCH_SIZE = 10;
-
-  @Bean
-  public Job fileReaderJob(@Qualifier("fileReaderJob") Step step) {
-      return jobBuilderFactory.get("fileReaderJob")
-              .start(step)
-              .listener(null)
-              .build();
-  }
-
-  /**
-   * 註冊 Step
-   * @param itemReader
-   * @param process
-   * @param itemWriter
-   * @param jpaTransactionManager
-   * @return
-   */
-  @Bean("fileReaderStep")
-  private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, BCH001Processor process, ItemWriter<BookInfoDto> itemWriter,
-          JpaTransactionManager jpaTransactionManager) {
-      return stepBuilderFactory.get("BCH001Step1")
-              .transactionManager(jpaTransactionManager)
-              .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
-              .reader(itemReader)
-              .faultTolerant()
-              .skip(Exception.class)
-              .skipLimit(Integer.MAX_VALUE)
-              .writer(itemWriter)
-              .listener(new BCHBORED001StepListener())
-              .listener(new BCHBORED001ReaderListener())
-              .build();
-  }
-  
-  /**
-   * Step Transaction
-   * @return
-   */
-  @Bean
-  public JpaTransactionManager jpaTransactionManager() {
-    final JpaTransactionManager transactionManager = new JpaTransactionManager();
-    return transactionManager;
-  }
-
-  /**
-   * 建立 FileReader
-   * @return
-   */
-  @Bean
-  public ItemReader<BookInfoDto> getItemReader() {
-      return new FlatFileItemReaderBuilder<BookInfoDto>().name("fileReader")
-              .resource(new ClassPathResource("/excel/書單.csv"))
-              .linesToSkip(1)
-              .lineMapper(getBookInfoLineMapper())
-              .build();
-  }
-}
-```
-在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。
 
 #### FlatFileItemReader 部分屬性
 | 方法名稱 | 說明 |
@@ -132,7 +53,7 @@ public class BCHBORED001JobConfig {
 再來，要使用 LineMapper 物件來設定檔按欄位的分割以及轉換的規則。
 
 ## LineMapper
-LineMapper 這個介面的功能是將字串轉換為物件。主要是將讀入的一行資料進行轉換，再轉換的過程中 LineMapper 實例會呼叫 `mapLine()` 方法來處理資料轉換。
+LineMapper 這個介面的功能是將字串轉換為物件。主要是將讀入的一行資料進行轉換，再轉換的過程中 LineMapper 實例會呼叫 `mapLine()` 方法來處理資料轉換。而我們也不需要知道 Spring Batch 怎麼去獲取一行資料的。
 
 ```java
 public interface LineMapper<T> {
@@ -150,10 +71,26 @@ public interface LineMapper<T> {
 	T mapLine(String line, int lineNumber) throws Exception;
 }
 ```
-因為涉及到資料轉換，要從一行 ( line ) 轉換為一個 FieldSet ( 像是 ResultSet 的概念 )，一個欄位是一個 column，必須傳入兩個介面的物件實例給 LineMapper，分別是 **LineTokenizer** 及 **FieldSetMapper**。
+
+Spring Batch 提供一些用來處理不同狀況、實作 `LineMapper` 的類別 ( 如下表 )。
+| Class | 說明 |
+| --- | --- |
+| `DefaultLineMapper` | 預設用來將標記化後的 lines 的內容映射到程式面的 Object 中的實例。
+| `JsonLineMapper` | 支援將 JOSN 格式數據的提取，並將資料 mapping 到指定的格式中。此類別是基於 jackson-mapper-asl.jar 文件內的規範實現的，相關可以到 http://jackson.codehaus.org/ 網站上查詢。
+| `PassThroughLineMapper` | 提供原始的資料字串，而非映射到程式面的物件中。
+| `PatternMatchingCompositeLineMapper` | Parses heterogeneous record lines. For each line type, a line tokenizer and a fieldset mapper must be configured.
 <br/>
 
-#### LineTokenizer
+`LineMapper` 最常用的實現類別是 `DefaultLineMapper`，它會分成兩個階段來處理讀入的資料：
+1. 使用 `LineTokenizer` 解析來源將來源提取成一行字段 ( lines )
+2. 來源資料中的一行資訊會被解析成一個 `FieldSet` 物件傳入，接下來就要使用 `FieldSetMapper` 物件來建立轉換目標物件 ( Data Object )，並將 `FieldSet` 中的值對應到目標物件中。
+<br/>
+
+過程如下：<br/>
+![](/images/12-2.png)
+<br/>
+
+## LineTokenizer
 此介面功能主要是用來將一行資料分割為不同的資料欄位 ( FieldSet )，所以在使用 LineMapper 時也要實作此介面。LineTokenizer 介面可以由以下三種類別實現：<br/>
 
 1. DelimitedLineTokenizer：利用分隔符號將資料轉換為 FieldSet，預設為逗號，也可以自行定義分隔符號。
@@ -170,7 +107,7 @@ DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
 ```
 <br/>
 
-#### FieldSetMapper
+## FieldSetMapper
 FieldSetMapper 介面是將讀入併分割好的 FieldSet 轉換為程式面的物件。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 **DefaultLineMapper** 及 **BeanWrapperFieldSetMapper**。
 
 1. DefaultLineMapper
@@ -263,105 +200,98 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 ```
 <br/>
 
-## 完整檔案
-完整檔案如下：
+那麼接下來，先建立一個 FlatFileItemReader。
+```
+spring.batch.springBatchPractice.job
+  |--BCHBORED001JobConfig.java // 修改
+spring.batch.springBatchPractice.listener
+  |--BCHBORED001JobListener.java
+  |--BCHBORED001ReaderListener.java // 新增
+```
+<br/>
+
+* `BCHBORED001JobConfig.java`
 ```java
-/** JobBuilderFactory */
-    @Autowired
-    private JobBuilderFactory jobBuilderFactory;
+@Configuration
+public class FileReaderJobConfig {
 
-    /** StepBuilderFactory */
-    @Autowired
-    private StepBuilderFactory stepBuilderFactory;
+  /** JobBuilderFactory */
+  @Autowired
+  private JobBuilderFactory jobBuilderFactory;
 
-    /** Mapping 欄位名稱 */
-    private static final String[] MAPPER_FIELD = new String[] { "BookName", "Author", "Category", "Tags", "Recommend", "Description",
-            "Comment1", "Comment2", "UpdDate", "UpdName" };
+  /** StepBuilderFactory */
+  @Autowired
+  private StepBuilderFactory stepBuilderFactory;
 
-    /** 每批件數 */
-    private static final int FETCH_SIZE = 10;
+  /** CarRepo */
+  @Autowired
+  private CarRepo carRepo;
 
-    @Bean
-    public Job fileReaderJob(@Qualifier("fileReaderStep") Step step) {
-        return jobBuilderFactory.get("BCHBORED001Job")
-                .start(step)
-                .listener(new BCHBORED001JobListener())
-                .build();
-    }
+  /** Mapping 欄位名稱 */
+  private static final String[] MAPPER_FIELD = new String[] { "Manufacturer", "Type", "MinPrice", "Price" };
 
-    /**
-     * 註冊 Step
-     * @param itemReader
-     * @param process
-     * @param itemWriter
-     * @param jpaTransactionManager
-     * @return
-     */
-    @Bean
-    @Qualifier("fileReaderStep")
-    private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, ItemWriter<BookInfoDto> itemWriter,
-            JpaTransactionManager jpaTransactionManager) {
-        return stepBuilderFactory.get("BCH001Step1")
-                .transactionManager(jpaTransactionManager)
-                .<BookInfoDto, BookInfoDto> chunk(FETCH_SIZE)
-                .reader(itemReader).faultTolerant()
-                .skip(Exception.class)
-                .skipLimit(Integer.MAX_VALUE)
-                .writer(itemWriter)
-                .listener(new BCHBORED001StepListener())
-                .listener(new BCHBORED001ReaderListener())
-                .listener(new BCHBORED001WriterListener())
-                .build();
-    }
-    
-    /**
-     * Step Transaction
-     * @return
-     */
-    @Bean
-    public JpaTransactionManager jpaTransactionManager() {
-        final JpaTransactionManager transactionManager = new JpaTransactionManager();
-        return transactionManager;
-    }
+  /** 每批件數 */
+  private static final int FETCH_SIZE = 1;
 
-    /**
-     * 建立 FileReader
-     * @return
-     */
-    @Bean
-    public ItemReader<BookInfoDto> getItemReader() {
-        return new FlatFileItemReaderBuilder<BookInfoDto>().name("fileItemReader")
-                .resource(new ClassPathResource("excel/書單.csv"))
-                .encoding("UTF-8")
-                .linesToSkip(1)
-                .lineMapper(getBookInfoLineMapper())
-                .build();
-    }
+  /**
+    * 註冊 Job
+    * @param step
+    * @return
+    */
+  @Bean("File001Job")
+  public Job fileReaderJob(@Qualifier("File001Step") Step step) {
+    return jobBuilderFactory.get("File001Job")
+        .start(step)
+        .listener(new File001JobListener())
+        .build();
+  }
 
-    /**
-     * 建立 FileReader mapping 規則
-     * @return
-     */
-    private LineMapper<BookInfoDto> getBookInfoLineMapper() {
-        DefaultLineMapper<BookInfoDto> bookInfoLineMapper = new DefaultLineMapper<>();
+  /**
+   * 註冊 Step
+   * @param itemReader
+   * @param itemWriter
+   * @param jpaTransactionManager
+   * @return
+   */
+  @Bean("File001Step")
+  public Step fileReaderStep(@Qualifier("File001FileReader") ItemReader<Car> itemReader, @Qualifier("File001JpaWriter") ItemWriter<Car> itemWriter,
+      JpaTransactionManager jpaTransactionManager) {
 
-        // 1. 設定每一筆資料的欄位拆分規則，預設以逗號拆分
-        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
-        tokenizer.setNames(MAPPER_FIELD);
+    return stepBuilderFactory.get("File001Step")
+      .transactionManager(jpaTransactionManager)
+      .<Car, Car>chunk(FETCH_SIZE)
+      .reader(itemReader)
+      .faultTolerant()
+      .skip(Exception.class)
+      .skipLimit(Integer.MAX_VALUE)
+      .writer(itemWriter)
+      .listener(new File001StepListener())
+      .listener(new File001ReaderListener())
+      .listener(new File001WriterListener())
+      .build();
+  }
 
-        // 2. 指定 fieldSet 對應邏輯
-        BeanWrapperFieldSetMapper<BookInfoDto> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
-        fieldSetMapper.setTargetType(BookInfoDto.class);
-
-        bookInfoLineMapper.setLineTokenizer(tokenizer);
-        bookInfoLineMapper.setFieldSetMapper(fieldSetMapper);
-        return bookInfoLineMapper;
-    }
+  /**
+    * 建立 FileReader
+    * @return
+    */
+  @Bean("File001FileReader")
+  public ItemReader<Car> getItemReader() {
+    return new FlatFileItemReaderBuilder<Car>().name("File001FileReader")
+      .encoding("UTF-8")
+      .resource(new ClassPathResource("file/CARS.csv"))
+      .linesToSkip(1)
+      .lineMapper(getCarLineMapper())
+      .build();
+  }
 }
 ```
+
+在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。
 
 ## 參考
 * https://stackoverflow.com/questions/66234905/reading-csv-data-in-spring-batch-creating-a-custom-linemapper
 * https://www.itread01.com/content/1562677203.html
 * https://www.petrikainulainen.net/programming/spring-framework/spring-batch-tutorial-reading-information-from-a-file/
 * https://www.dineshonjava.com/spring-batch-read-from-csv-and-write-to-relational-db/
+* https://livebook.manning.com/book/spring-batch-in-action/chapter-5/65
