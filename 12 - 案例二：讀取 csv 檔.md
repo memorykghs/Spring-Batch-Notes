@@ -53,7 +53,7 @@ Resource resource = new FileSystemResource("resources/書單.csv");
 再來，要使用 LineMapper 物件來設定檔按欄位的分割以及轉換的規則。
 
 ## LineMapper
-LineMapper 這個介面的功能是將字串轉換為物件。主要是將讀入的一行資料進行轉換，再轉換的過程中 LineMapper 實例會呼叫 `mapLine()` 方法來處理資料轉換。而我們也不需要知道 Spring Batch 怎麼去獲取一行資料的。
+LineMapper 這個介面的功能是將字串轉換為物件。主要是將讀入的一行資料進行轉換，轉換過程中 LineMapper 實例會呼叫 `mapLine()` 方法來處理，而我們也不需要知道 Spring Batch 怎麼去獲取一行資料的。
 
 ```java
 public interface LineMapper<T> {
@@ -82,8 +82,8 @@ Spring Batch 提供一些用來處理不同狀況、實作 `LineMapper` 的類�
 <br/>
 
 `LineMapper` 最常用的實現類別是 `DefaultLineMapper`，它會分成兩個階段來處理讀入的資料：
-1. 使用 `LineTokenizer` 解析來源將來源提取成一行字段 ( lines )
-2. 來源資料中的一行資訊會被解析成一個 `FieldSet` 物件傳入，接下來就要使用 `FieldSetMapper` 物件來建立轉換目標物件 ( Data Object )，並將 `FieldSet` 中的值對應到目標物件中。
+1. 使用 `LineTokenizer` 解析並將來源檔案提取成一行一行字段 ( lines )
+2. 來源檔案中的一行資訊會被解析成一個 `FieldSet` 物件傳入，接下來就要使用 `FieldSetMapper` 物件來建立轉換目標物件 ( Data Object )，並將 `FieldSet` 中的值對應到目標物件中。
 <br/>
 
 過程如下：<br/>
@@ -91,27 +91,63 @@ Spring Batch 提供一些用來處理不同狀況、實作 `LineMapper` 的類�
 <br/>
 
 ## LineTokenizer
-此介面功能主要是用來將一行資料分割為不同的資料欄位 ( FieldSet )，所以在使用 LineMapper 時也要實作此介面。LineTokenizer 介面可以由以下三種類別實現：<br/>
+此介面功能主要是用來將一行資料轉換為一個 `FieldSet` 物件，所以在使用 LineMapper 時也要實作此介面。
+```java
+public interface LineTokenizer {
+	
+	/**
+	 * Yields the tokens resulting from the splitting of the supplied
+	 * <code>line</code>.
+	 * 
+	 * @param line the line to be tokenized (can be <code>null</code>)
+	 * 
+	 * @return the resulting tokens
+	 */
+	FieldSet tokenize(String line);
+}
+```
 
-1. DelimitedLineTokenizer：利用分隔符號將資料轉換為 FieldSet，預設為逗號，也可以自行定義分隔符號。
-<br/>
-2. FixedLengthTokenizer：根據欄位的長度來解析出 FieldSet 結構，所以必須為記錄且定義欄位寬度。
-<br/>
-3. PatternMatchingCompositeLineTokenizer：自訂匹配機制來動態決定要使用哪一種 LineTokenizer。
 
-在此範例中，使用 DelimitedLineTokenizer 實例，由於。
+`LineTokenizer` 介面可以由以下三種類別實現：<br/>
+
+1. `DelimitedLineTokenizer`：利用分隔符號將資料轉換為 `FieldSet`，預設為逗號，也可以自行定義分隔符號。
+
+2. `FixedLengthTokenizer`：根據欄位的長度來解析出 `FieldSet` 結構，所以必須為記錄且定義欄位寬度。
+
+3. `PatternMatchingCompositeLineTokenizer`：自訂匹配機制來動態決定要使用哪一種 `LineTokenizer`。
+
+在此範例中，使用 `DelimitedLineTokenizer` 實例，由於預設是逗號，所以只要 `new` 出 `DelimitedLineTokenizer` 物件即可。
 
 ```java
 // 1. 設定每一筆資料的欄位拆分規則，預設以逗號拆分
 DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+tokenizer.setDelimiter("#"); // 設定其他劃分符號
 ```
 <br/>
 
 ## FieldSetMapper
-FieldSetMapper 介面是將讀入併分割好的 FieldSet 轉換為程式面的物件。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 **DefaultLineMapper** 及 **BeanWrapperFieldSetMapper**。
+FieldSetMapper 介面是將 FieldSet 轉換為程式面物件的介面。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 **DefaultLineMapper** 及 **BeanWrapperFieldSetMapper**。經過 `FieldSetMapper` 轉換後會回傳目標物件。
+```java
+public interface FieldSetMapper<T> {
+	
+	/**
+	 * Method used to map data obtained from a {@link FieldSet} into an object.
+	 * 
+	 * @param fieldSet the {@link FieldSet} to map
+	 * @return the populated object
+	 * @throws BindException if there is a problem with the binding
+	 */
+	T mapFieldSet(FieldSet fieldSet) throws BindException;
+}
+```
 
-1. DefaultLineMapper
-在這個例子中我們使用的是 DefaultLineMapper。mapping 的方法大致可分為兩種：依照欄位順序或是指定欄位名稱，依欄位名稱對應。如果要依照欄位名稱對應，在上一步使用 LineTokenizer 時就要為拆分出來的字串依照順序命名，這樣在實例化 FieldSetMapper 的時候就可以用 `fieldSet.readString(columnName)` 的方式將指定的字串取出。
+通常 mapping 的方式有 2 種：
+1. 依欄位順序
+2. 依欄位名稱
+<br/>
+
+#### DefaultLineMapper
+如果要依照欄位名稱對應，在上一步使用 LineTokenizer 時就要為拆分出來的字串依照順序命名，這樣在實例化 FieldSetMapper 的時候就可以用 `fieldSet.readString(columnName)` 的方式將指定的字串取出。
 ```java
 /** Mapping 欄位名稱 */
 private static final String[] MAPPER_FIELD = new String[] { "BookName", "Author", "Category", "Tags", 
@@ -128,6 +164,7 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 
   // 1. 設定每一筆資料的欄位拆分規則
   DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+  tokenizer.setNames(MAPPER_FIELD); // 設定每個欄位名稱，有順序性
 
   // 2. 指定 fieldSet 對應邏輯
   FieldSetMapper<BookInfoDto> fieldSetMapper = fieldSet -> {
@@ -152,6 +189,8 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
   return bookInfoLineMapper;
 }
 ```
+設定完欄位名稱後，實做 `FieldSetMapper` 介面，呼叫 `FieldSet` 物件的 `readXXX()` 方法就可以依照欄位名稱取得相對應的物件內容。
+
 整體的轉換順序大致如下圖：<br/>
 ![](images/8-1.png)
 <br/>
@@ -176,7 +215,7 @@ FieldSetMapper<BookInfoDto> fieldSetMapper = fieldSet -> {
 ```
 <br/>
 
-2. BeanWrapperFieldSetMapper
+#### BeanWrapperFieldSetMapper
 在轉換過程中可以將 FieldSet 的 `names` 屬性與目標物件的 field 繫結，就可以直接使用映射轉換。目標物件的 field 名稱必須跟前面 LineTokenizer 設定的 `names` 一樣才可以轉換 ( 目前看起來大小寫不一樣好像沒有關係 )。
 ```java
 /**
