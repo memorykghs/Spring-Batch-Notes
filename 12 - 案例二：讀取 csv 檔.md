@@ -126,7 +126,7 @@ tokenizer.setDelimiter("#"); // 設定其他劃分符號
 <br/>
 
 ## FieldSetMapper
-FieldSetMapper 介面是將 FieldSet 轉換為程式面物件的介面。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 **DefaultLineMapper** 及 **BeanWrapperFieldSetMapper**。經過 `FieldSetMapper` 轉換後會回傳目標物件。
+FieldSetMapper 介面是將 FieldSet 轉換為程式面物件的介面。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 `DefaultLineMapper、``BeanWrapperFieldSetMapper` 及 `PassThroughFieldSetMapper` 等等。經過 `FieldSetMapper` 轉換後會回傳目標物件。
 ```java
 public interface FieldSetMapper<T> {
 	
@@ -216,7 +216,10 @@ FieldSetMapper<BookInfoDto> fieldSetMapper = fieldSet -> {
 <br/>
 
 #### BeanWrapperFieldSetMapper
-在轉換過程中可以將 FieldSet 的 `names` 屬性與目標物件的 field 繫結，就可以直接使用映射轉換。目標物件的 field 名稱必須跟前面 LineTokenizer 設定的 `names` 一樣才可以轉換 ( 目前看起來大小寫不一樣好像沒有關係 )。
+在轉換過程中可以將 `FieldSet` 的 `names` 屬性與目標物件的 `field` 繫結，就可以直接使用映射轉換。目標物件的 `field` 名稱必須跟前面 `LineTokenizer` 設定的 `names` 一樣才可以轉換 ( 目前看起來大小寫不一樣好像沒有關係 )。
+
+> [BeanWrapperFieldSetMapper Source Code](https://github.com/spring-projects/spring-batch/blob/main/spring-batch-infrastructure/src/main/java/org/springframework/batch/item/file/mapping/BeanWrapperFieldSetMapper.java)
+
 ```java
 /**
  * 建立 LineMapper
@@ -239,7 +242,9 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 ```
 <br/>
 
-那麼接下來，先建立一個 FlatFileItemReader。
+
+## 建立 FlatFileReader
+最後，根據上面的一些依賴，建立 FlatFileItemReader。
 ```
 spring.batch.springBatchPractice.job
   |--BCHBORED001JobConfig.java // 修改
@@ -320,13 +325,37 @@ public class FileReaderJobConfig {
       .encoding("UTF-8")
       .resource(new ClassPathResource("file/CARS.csv"))
       .linesToSkip(1)
-      .lineMapper(getCarLineMapper())
+      .delimited()
+      .names(MAPPER_FIELD)
+      .fieldSetMapper(new BeanWrapperFieldSetMapper<Car>())
+      // .lineMapper(getCarLineMapper())
       .build();
+  }
+
+  /**
+    * 建立 FileReader mapping 規則
+    * @return
+    */
+  private LineMapper<Car> getCarLineMapper() {
+    DefaultLineMapper<Car> bookInfoLineMapper = new DefaultLineMapper<>();
+
+    // 1. 設定每一筆資料的欄位拆分規則，預設以逗號拆分
+    DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+    tokenizer.setNames(MAPPER_FIELD);
+
+    // 2. 設定資料轉換到程式面的規則
+    BeanWrapperFieldSetMapper<Car> fieldSetMapper = new
+    BeanWrapperFieldSetMapper<>();
+    fieldSetMapper.setTargetType(Car.class);
+
+    bookInfoLineMapper.setLineTokenizer(tokenizer);
+    bookInfoLineMapper.setFieldSetMapper(fieldSetMapper);
+    return bookInfoLineMapper;
   }
 }
 ```
 
-在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。
+在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。`linesToSkip()` 方法用來跳過表頭；
 
 ## 參考
 * https://stackoverflow.com/questions/66234905/reading-csv-data-in-spring-batch-creating-a-custom-linemapper
