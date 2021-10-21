@@ -124,6 +124,17 @@ Spring Batch 為 ItemWriter 提供許多實現類，當然我們也可以去自�
 ## ItemProcessor
 ItemProcessor 主要是對毒入的資料進行處理，當 ItemReader 讀到一條資料後，在 ItemWriter 尚未寫入這條資料之前，可以透過 ItemProcessor 提供的功能對資料進行業務邏輯處理。如果處理的過程中，該筆資料不應該繼續往下一個步驟 ( 通常是 ItemWriter ) 傳遞，就回傳 `null`。
 
+## Spring Batch 監聽器
+Spring Batch 提供了多種監聽器 ( Listener )，用於在批次任務執行過程中監聽流程。常用的監聽器根據粒度大到小可以分為：
+1. Job - JobExecutionListener
+2. Step - StepExecutionListener
+3. Chunk - ChunkListener
+4. ItemReader - ItemReadListener
+5. ItemWriter - ItemWriteListener
+6. ItemProcessor - ItemProcessListener、SkipListener
+
+等等。
+
 ## Spring Batch 表格相關
 前一章以及本章提到的一些用於紀錄狀態的表格結構 UML 如下：<br/>
 ![](/images/3-3.png)
