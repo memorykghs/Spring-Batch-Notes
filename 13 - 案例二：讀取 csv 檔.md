@@ -27,7 +27,7 @@ boolean booleanValue = fs.readBoolean(2);
 
 以下提供幾個 `FieldSet` 的方法：<br/>
 
-![](/images/12-3.png)
+![](/images/13-3.png)
 
 ## FlatFileItemReader
 Spring Batch 為檔案讀取提供了 FlatFileItemReader 類別，並提供一些方法用來讀取資料和轉換。在 FlatFileItemReader 中有 2 個主要的功能介面：[Resource](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#resources) 及 LineMapper。 Resource 用於外部檔案讀取，例如：
@@ -37,7 +37,7 @@ Resource resource = new FileSystemResource("resources/書單.csv");
 ```
 
 他們之間的關係大致如下圖：<br/>
-![](/images/12-1.png)
+![](/images/13-1.png)
 
 
 #### FlatFileItemReader 部分屬性
@@ -87,7 +87,7 @@ Spring Batch 提供一些用來處理不同狀況、實作 `LineMapper` 的類�
 <br/>
 
 過程如下：<br/>
-![](/images/12-2.png)
+![](/images/13-2.png)
 <br/>
 
 ## LineTokenizer
@@ -192,7 +192,7 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 設定完欄位名稱後，實做 `FieldSetMapper` 介面，呼叫 `FieldSet` 物件的 `readXXX()` 方法就可以依照欄位名稱取得相對應的物件內容。
 
 整體的轉換順序大致如下圖：<br/>
-![](images/8-1.png)
+![](images/13-4.png)
 <br/>
 
 如果不指定欄位名稱，依照被逗號分隔後的 `fieldSet` 位置來進行 mapping，方法如下：
@@ -355,7 +355,7 @@ public class FileReaderJobConfig {
 }
 ```
 
-在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。`linesToSkip()` 方法用來跳過表頭；
+在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。`linesToSkip()` 方法用來跳過表頭。
 
 ## 參考
 * https://stackoverflow.com/questions/66234905/reading-csv-data-in-spring-batch-creating-a-custom-linemapper

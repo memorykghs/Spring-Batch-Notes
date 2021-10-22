@@ -1,6 +1,6 @@
 # 07 - 建立 FlatFileItemWriter 與 ItemWriterListener
 
-## 建立 ItemWriter
+## ItemWriter
 ItemWriter 在功能上與 ItemReader 相似，但具有相反的作用，負責資料的寫出。在 Database 或是 Queue 的情況下，這些操作可能是插入、更新或是發送。較常使用的 ItemWriter 類別有 `FlatFileItemWriter`、`RepositoryItemWriter`、`JdbcBatchItemWriter` 等等。其他 ItemWriter 的類別可以參考 https://docs.spring.io/spring-batch/docs/current/reference/html/appendix.html#itemWritersAppendix。
 ```java
 public interface ItemWriter<T> {
@@ -10,7 +10,33 @@ public interface ItemWriter<T> {
 }
 ```
 
-由於這個範例是由資料庫讀取定輸出檔案，所以我們要使用的是 `FlatFileItemWriter`。接下來在 `DbReaderJobConfig.java` 中新增 ItemWriter 相關設定。
+由於這個範例是由資料庫讀取定輸出檔案，所以我們要使用的是 `FlatFileItemWriter`。輸出平面文件的流程跟讀入有點類似，不過讀入的部分會再第二個例子中才會提到。相似的點在於，寫入的邏輯可以依照特殊符號分隔，或固定長度格式的規則來進行。
+
+## LineAggregator
+FlatFileItemWriter 處理中的一環，與後面提到的 `LineTokenizer` 角色類似，主要負責將 Data Object 轉換為 String，也就是將 Data Object 中的所有屬性聚合成一個 String 以寫入文件。
+```java
+public interface LineAggregator<T> {
+
+    public String aggregate(T item);
+
+}
+```
+`LineTokenizer` 則是反向的將一串 String 拆解為不同的字段，傳入一段 String 並輸出 `FieldSet`，最後塞到 Data Object 中。`LineAggregator` 則是傳入一個 `item`，`item` 可以是任何行別，通常會傳入 Data Object 的型別，最後回傳 String。
+
+實現 `LineAggregator` 最基本的類別是 `PassThroughLineAggregator`，它會預設傳入的物件的每一個屬性是可以使用 `toString()` 方法直接轉換為 String 物件的：
+```java
+public class PassThroughLineAggregator<T> implements LineAggregator<T> {
+
+    public String aggregate(T item) {
+        return item.toString();
+    }
+}
+```
+
+![](/images/7-1.png)
+
+## 建立 ItemReader
+接下來在 `DbReaderJobConfig.java` 中新增 ItemWriter 相關設定。
 ```
 spring.batch.springBatchExample.job
   |--DbReaderJobConfig.java // 修改
@@ -41,11 +67,11 @@ public class DbReaderJobConfig {
 	private static int FETCH_SIZE = 10;
 	
 	/** Mapper Field */
-    private static final String[] MAPPER_FIELD = new String[] { "Manufacturer", "Type", "MinPrice", "Price" };
+	private static final String[] MAPPER_FIELD = new String[] { "Manufacturer", "Type", "MinPrice", "Price" };
 
-    /** Header */
-    private final String HEADER = new StringBuilder().append("製造商").append(',').append("類別").append(',').append("底價").append(',')
-            .append("售價").toString();
+	/** Header */
+	private final String HEADER = new StringBuilder().append("製造商").append(',').append("類別").append(',').append("底價").append(',')
+			.append("售價").toString();
 
 	/**
 	 * 建立 Job
@@ -79,8 +105,8 @@ public class DbReaderJobConfig {
 				.<Cars, Cars>chunk(FETCH_SIZE)
 				.reader(itemReader)
 				.faultTolerant()
-//                .skip(Exception.class)
-//                .skipLimit(Integer.MAX_VALUE)
+				.skip(Exception.class)
+				.skipLimit(Integer.MAX_VALUE)
 				.writer(itemWriter)
 				.listener(new Db001StepListener())
 				.listener(new Db001ReaderListener())
@@ -106,7 +132,7 @@ public class DbReaderJobConfig {
 				.repository(carRepo)
 				.methodName("findAll")
 				// .arguments(args)
-				 .sorts(sortMap) // 必要
+				.sorts(sortMap) // 必要
 				.build();
 	}
 
@@ -177,3 +203,4 @@ public class Db001WriterListener implements ItemWriteListener<CarsDto> {
 
 ## 參考
 * https://blog.csdn.net/weixin_38004638/article/details/104765005
+* https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/readersAndWriters.html#flatFileItemWriter
