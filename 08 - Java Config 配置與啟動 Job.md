@@ -26,7 +26,7 @@ public BatchConfigurer batchConfigurer(DataSource dataSource) {
 ```
 
 ## 配置 JobRepository
-其實只要在 Application 上使用 `@EnableBatchProcessing` 就會有預設的 JobRepository，當然 Spring Batch 也有提供客製化 JobRepository 的方法。
+其實只要在 Application 上使用 `@EnableBatchProcessing` 就會有預設的 JobRepository，當然 Spring Batch 也有提供客製化 JobRepository 的方法。JobRepository 的功能就是用於對 Spring Batch 中各種持久化對象的基本 CRUD 操作，像是 `JobExecution`、`StepExecution` 等物件就會被儲存在 JobRepository 中。
 
 ## 配置 JobLauncher
 當使用 `@EnableBatchProcessing` 標註時，同時也提供了一個默認的 `JobRegistry` 環境。
@@ -52,18 +52,32 @@ spring.batch.springBatchPractice.config // 新增
 `BatchConfig.java`
 ```java
 @Configuration
-@EnableBatchProcessing(modular = true)
 public class BatchConfig extends DefaultBatchConfigurer {
-    
-    @Override
-    public void setDataSource(DataSource dataSource) {
-        // 讓Spring Batch自動產生的table不寫入DB
-    }
-       
-    @Bean
-    public ApplicationContextFactory getJobContext() {
-        return new GenericApplicationContextFactory(BCHBORED001JobConfig.class);
-    }
+
+	/**
+	 * 產生 Step Transaction
+	 * @return
+	 */
+	@Bean
+	public JpaTransactionManager jpaTransactionManager(DataSource dataSource) {
+		final JpaTransactionManager transactionManager = new JpaTransactionManager();
+		transactionManager.setDataSource(dataSource);
+		return transactionManager;
+	}
+
+	/**
+	 * 使用 JobRegistry 註冊 Job
+	 * @param jobRegistry
+	 * @return
+	 * @throws Exception
+	 */
+	@Bean
+	public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry) throws Exception {
+		JobRegistryBeanPostProcessor beanProcessor = new JobRegistryBeanPostProcessor();
+		beanProcessor.setJobRegistry(jobRegistry);
+			beanProcessor.afterPropertiesSet();
+		return beanProcessor;
+	}
 }
 ```
 首先會先在 `BatchConfig.java` 這個類別上加上 `@EnableBatchProcessing` 註解，讓我們可以運行 Spring Batch。加上註解後，Spring 會自動幫我們產生與 Spring Batch 相關的 Bean，並將這些 Bean 交給 Spring 容器管理。
