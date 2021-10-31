@@ -2,6 +2,9 @@
 Spring Batch 是由 Spring Source 和 Accenture ( 埃森哲 ) 合作開發的，可以用來資料抽取、資料庫遷移、資料同步等。Spring Batch 只專注於處理邏輯的抽象，跟排程框架是兩回事。可以結合開源的排程框架有 quartz、cron 等等。下圖是 Spring Batch 的分層架構，有較高的多樣化性與可擴展性：<br/>
 ![](/images/1-1.png)
 
+* Application - 包含所有 Job 和使用 Spring Batch 框架自行撰寫的程式碼。
+* Batch Core - 包含控制和啓動批次作業所需的所有 AP 類別，如 JobLauncher、JobRegistry 等等。
+* Batch Infrastructure - 包含應用程式和批次處理核心組件與服務，例如 ItemReader、ItemWriter 等等。
 <div style="color: red;">Batch Core 跟 Batch Infrastructure 差別?</div><br/>
 
 這個分層架構分成主要的三塊：Application、Batch Core、及 Batch Infrastructure。Application 包含了整個批次的處理邏輯以及一些客製化的程式碼。Batch Core 包含執行時期用來啟動或控制 Job 所需要的 class，像是 `JobLauncher`、`Job` 和 `Step`。Applicatin 與 Batch Core 都是建立在 Batch Infrastructure 上，Infrastructure 則涵蓋了常見的 readers、writers 和 services ( 例：`RetryTemplate` )，這些東西在 Application 跟 Batch Core 都會用到。

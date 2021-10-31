@@ -1,4 +1,4 @@
-# 12 - 讀取 csv 檔
+# 16 - 讀取 csv 檔
 前面有提到 Spring Batch 的讀取資料來源大致上可以分為三種，下面的例子將以讀取 csv 檔為例。最常用的讀取檔案的 ItemReader 是 FlatFileItemReader。FlatFile 是**扁平結構檔案** ( 也稱為矩陣結構檔案 )，是最常見的一種檔案型別。與 JSON、XML 檔案的差別在於 FlatFile 沒有一個特定的結構，所以在讀取的時候需要定義讀取及轉換的規則。
 
 一般來說，平面文件可以分成兩種切割方式：
@@ -27,7 +27,7 @@ boolean booleanValue = fs.readBoolean(2);
 
 以下提供幾個 `FieldSet` 的方法：<br/>
 
-![](/images/13-3.png)
+![](/images/16-3.png)
 
 ## FlatFileItemReader
 Spring Batch 為檔案讀取提供了 FlatFileItemReader 類別，並提供一些方法用來讀取資料和轉換。在 FlatFileItemReader 中有 2 個主要的功能介面：[Resource](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#resources) 及 LineMapper。 Resource 用於外部檔案讀取，例如：
@@ -37,7 +37,7 @@ Resource resource = new FileSystemResource("resources/書單.csv");
 ```
 
 他們之間的關係大致如下圖：<br/>
-![](/images/13-1.png)
+![](/images/16-1.png)
 
 
 #### FlatFileItemReader 部分屬性
@@ -87,7 +87,7 @@ Spring Batch 提供一些用來處理不同狀況、實作 `LineMapper` 的類�
 <br/>
 
 過程如下：<br/>
-![](/images/13-2.png)
+![](/images/16-2.png)
 <br/>
 
 ## LineTokenizer

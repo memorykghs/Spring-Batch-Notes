@@ -6,7 +6,7 @@ Step 物件封裝了批次處理作業的一個獨立的、有順序的階段。
 一個 Step 中可以包含 ItemReader、ItemProcessor 及 ItemWriter 這三個物件，分別用來讀取資料、對資料進行處理，以及有需要的時候輸出資料，架構如下：<br/>
 ![](/images/5-1.png)
 
-Spring Batch 中最常見的處理風格其實是 **chunk-orientd**，指的是一次讀取某一個設定好的數量的資料區塊，一旦讀取的項目數量等於所設定的提交間隔 ( commit interval )，這"塊"資料就會交由 ItemWriter 進行交易並 commit。大智的流程如下：<br/>
+Spring Batch 中最常見的處理風格其實是 **Chunk-oriented**，指的是一次讀取某一個設定好的數量的資料區塊，一旦讀取的項目數量等於所設定的提交間隔 ( commit interval )，這"塊"資料就會交由 ItemWriter 進行交易並 commit。大至的流程如下：<br/>
 ![](/images/5-2.png)
 
 ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進行輸出。當然，也可以在讀取資料後透過 ItemProcessor 處理資料，然後再由 ItemWriter 輸出。當讀取完一"塊"資料後，才會統一往下給 ItemProcessor 處理，概念如下：<br/>

@@ -1,4 +1,4 @@
-# 10 - Skip
+# 14 - Skip
 Skip 指的是當批次處理過程當中出現錯誤或是拋出例外時，我們不想要因為這些問題中斷整個批次處理，因為程式被中斷時很有可能遺失紀錄在整個執行環境中 Spring Batch 的相關參數資訊，如 StepExecution、JobExecution 等等。這時候就可以設定 Skip 規則讓程式在出現錯誤時，先跳過繼續往下。
 
 回憶一下前面建立的 Step 的程式碼：
@@ -54,7 +54,7 @@ public FaultTolerantStepBuilder<I, O> skipPolicy(SkipPolicy skipPolicy) {
 
 ## Skip Policy
 實作 `SkipPolicy` 的類別有以下 4 種，`CompositeSkipPolicy` 則是用來合併兩個 Skip Policy 規則的。 <br/>
-![](/images/11-1.png)
+![](/images/14-1.png)
 
 | Skip policy class[*] | 說明 |
 | --- | --- |
