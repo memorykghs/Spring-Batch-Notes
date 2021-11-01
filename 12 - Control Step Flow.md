@@ -193,3 +193,5 @@ public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
 ###### spring-boot-starter-mail
 * https://www.baeldung.com/spring-email
 * https://morosedog.gitlab.io/springboot-20190415-springboot27/
+* https://polinwei.com/spring-boot-send-email-via-gmail/
+* https://www.gushiciku.cn/pl/2Md9/zh-tw
