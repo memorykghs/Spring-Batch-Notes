@@ -39,9 +39,153 @@ public Job job() {
 <br/>
 
 ###### Step 2
-接下來設定參數。
+接下來設定參數，不過在設定參數前要先到 Google 帳號產稱授權碼，相關流程可以參考這篇[建立應用程式使用密碼](https://polinwei.com/spring-boot-send-email-via-gmail/#google_vignette)。
+
 ```properties
+# 信件相關
+# SMTP伺服器地址
+spring.mail.host=smtp.gmail.com
+# SMTP伺服器端口號
+spring.mail.port=123
+# 發送方帳號
+spring.mail.username=信箱
+# 發送方密碼（授權碼）
+spring.mail.password=應用程式密碼
+
+# javaMailProperties 配置
+# 開啟用戶身份驗證
+spring.mail.properties.mail.smtp.auth=true
+# STARTTLS：一種通信協議，具體可以搜索下
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
 ```
+<br/>
+
+###### Step 3
+先在 JobConfig 中建立寄送成功、失敗 email 的 Step 與 Tasklet。由由於 `Tasklet` 的內容不多，沒有另外獨立出單獨的 class。
+
+```
+spring.batch.springBatchExample.job
+  |--DbReaderJobConfig.java // 修改
+```
+
+1. 注入 `JavaMailSender`。
+    ```java
+    /** 發送 email */
+    @Autowired
+    private  JavaMailSender mailSender;
+    ```
+
+2. 建立發送成功通知信件 Step
+    ```java
+    /**
+    * 建立發送 success mail Step
+    * @param itemReader
+    * @param itemWriter
+    * @param processor
+    * @param transactionManager
+    * @return
+    */
+    @Bean
+    public Step sendSuccessEmailStep() {
+
+        return stepBuilderFactory.get("Db001Step")
+            .tasklet(new Tasklet() {
+                
+                @Override
+                public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
+                        throws Exception {
+
+                    SimpleMailMessage mailMsg = new SimpleMailMessage();
+                    mailMsg.setFrom("memorykghs@gmail.com");
+                    mailMsg.setTo("memorykghs.iem01@nctu.edu.tw");
+                    mailMsg.setSubject("Spring Batch 執行成功通知");
+                    mailMsg.setText("成功啦!成功啦!!成功啦!!!");
+
+                    mailSender.send(mailMsg);
+
+                    return RepeatStatus.FINISHED;
+                }
+            })
+            .build();
+    }
+    ```
+
+3. 建立發送成功通知信件 Step
+    ```java	
+    /**
+    * 建立發送 fail mail Step
+    * @param itemReader
+    * @param itemWriter
+    * @param processor
+    * @param transactionManager
+    * @return
+    */
+    @Bean
+    public Step sendFailEmailStep() {
+
+        return stepBuilderFactory.get("Db001Step")
+            .tasklet(new Tasklet() {
+                
+                @Override
+                public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
+                        throws Exception {
+
+                    SimpleMailMessage mailMsg = new SimpleMailMessage();
+                    mailMsg.setFrom("memorykghs@gmail.com");
+                    mailMsg.setTo("memorykghs.iem01@nctu.edu.tw");
+                    mailMsg.setSubject("Spring Batch 執行失敗通知");
+                    mailMsg.setText("批次執行失敗通知測試");
+
+                    mailSender.send(mailMsg);
+
+                    return RepeatStatus.FINISHED;
+                }
+            })
+            .build();
+    }
+    ```
+<br/>
+
+###### Step 4
+最後同樣在 JobConfig 中建立 Step flow。
+
+```
+spring.batch.springBatchExample.job
+  |--DbReaderJobConfig.java // 修改
+```
+
+```java
+/**
+ * 建立 Job
+ * 
+ * @param step
+ * @return
+ */
+@Bean
+public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
+    return jobBuilderFactory.get("Db001Job")
+            .preventRestart()
+            .start(step)
+            .on("COMPLETED").to(sendSuccessEmailStep()) // 源頭是 Reader Step，成功發送信件
+            .from(step).on("FAILED").to(sendFailEmailStep()) // 源頭也是 Reader Step，失敗也發送信件
+            .end() // 表示 Step flow 結束
+            .listener(new Db001JobListener())
+            .build();
+}
+```
+<br/>
+
+整理一些比較常用的 API 及相關功能：
+| 方法 | 說明 | 
+| --- | --- |
+| `start(Step step)` | 傳入一個 Step，然後回傳 `StepBuilder` 物件，當後面沒有接其他 flow 相關的方法時，代表要執行的唯一 Step；在 Step flow 中則代表 Step 的源頭。 | 
+| `on(String pattern)` | 傳入 String 型別的物件，在過程中會依照給予的條件判斷當前步驟的執行結果要往哪個分支進行下去。其他比對的特殊規則可以參考[官網](https://docs.spring.io/spring-batch/docs/current/reference/html/step.html#conditionalFlow)。 | 
+| `to(Step step)` | 用來設定判斷後下一步要執行的 Step。 |
+| `from(Step step)` | 從 `start()` 方法的 Step 註冊另外一條分支，並設定要執行的 Step。 |
+
+大致的流程如下圖。<br/>
+![](/images/12-3.png)
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/current/reference/html/step.html#controllingStepFlow
