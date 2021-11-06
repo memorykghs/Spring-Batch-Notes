@@ -268,7 +268,7 @@ spring.batch.springBatchPractice.config // 新增
 `BatchConfig.java`
 ```java
 @Configuration
-public class BatchConfig extends DefaultBatchConfigurer {
+public class BatchConfig {
 
 	/**
 	 * 產生 Step Transaction

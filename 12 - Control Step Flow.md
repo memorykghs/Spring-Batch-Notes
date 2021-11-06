@@ -41,23 +41,32 @@ public Job job() {
 ###### Step 2
 接下來設定參數，不過在設定參數前要先到 Google 帳號產稱授權碼，相關流程可以參考這篇[建立應用程式使用密碼](https://polinwei.com/spring-boot-send-email-via-gmail/#google_vignette)。
 
-```properties
-# 信件相關
-# SMTP伺服器地址
-spring.mail.host=smtp.gmail.com
-# SMTP伺服器端口號
-spring.mail.port=123
-# 發送方帳號
-spring.mail.username=信箱
-# 發送方密碼（授權碼）
-spring.mail.password=應用程式密碼
+```java
+@Configuration
+public class SendMailConfig {
 
-# javaMailProperties 配置
-# 開啟用戶身份驗證
-spring.mail.properties.mail.smtp.auth=true
-# STARTTLS：一種通信協議，具體可以搜索下
-spring.mail.properties.mail.smtp.starttls.enable=true
-spring.mail.properties.mail.smtp.starttls.required=true
+    @Bean
+    public JavaMailSender getJavaMailSender() {
+
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("smtp.gmail.com");
+    //		mailSender.setPort(465);
+        mailSender.setPort(587);
+        mailSender.setUsername(""); // 信箱
+        mailSender.setPassword(""); // 申請的應用程式密碼
+
+        Properties prop = mailSender.getJavaMailProperties();
+        prop.put("mail.smtp.auth", "true");
+        prop.put("mail.smtp.starttls.enable", "true");
+        prop.put("mail.smtp.starttls.required", "true");
+        prop.put("mail.protocol", "stmp");
+        prop.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+        prop.put("mail.debug", "true");
+    //		prop.put("mail.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+
+        return mailSender;
+    }
+}
 ```
 <br/>
 
@@ -176,6 +185,9 @@ public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
 ```
 <br/>
 
+
+> 範例：[Spring-Batch-Example feature/stepFlow](https://github.com/memorykghs/Spring-Batch-Example/tree/feature/stepFlow)
+
 整理一些比較常用的 API 及相關功能：
 | 方法 | 說明 | 
 | --- | --- |
@@ -186,6 +198,106 @@ public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
 
 大致的流程如下圖。<br/>
 ![](/images/12-3.png)
+
+## Batch Status 與 Exit Status
+在配置條件式的 Job 時，需要理解 `BatchStatus` 和 `ExitStatus` 之間的區別。
+
+#### BatchStatus
+`BatchStatus` 是一個 Enum，它是 `JobExecution` 和 `StepExecution` 的屬性，Spring Batch 框架使用它來記錄 `Job` 或 `Step` 的狀態。
+
+`BatchStatus` 的值有以下幾種：
+* `COMPLETED`
+* `STARTING`
+* `STARTED`
+* `STOPPING`
+* `STOPPED`
+* `FAILED`
+* `ABANDONED`
+* `UNKNOWN`
+<br/>
+
+`BatchStatus` 的屬性是不能被客製化的。
+
+```java
+...
+.from(stepA()).on("FAILED").to(stepB())
+...
+```
+像上面這段程式碼中，可能會覺得 `on()` 方法中是用 `BatchStatus` 的狀態來判斷 Step 是否成功。但實際上，它是 reference 到 `Step` 的 `ExitStatus`。
+<br/>
+
+#### ExitStatus
+`ExitStatus` 代表的是 `Step` 執行完畢後的狀態。
+
+上面的例子中，`Step` 執行失敗就要執行 Step B，在一般的情況下 `BatchStatus` 跟 `ExitStatus` 的狀態代碼會是一樣的，那這樣又為什麼需要 `BatchStatus` 呢?來看看以下例子：
+
+```java
+public class SkipCheckingListener extends StepExecutionListenerSupport {
+    public ExitStatus afterStep(StepExecution stepExecution) {
+        String exitCode = stepExecution.getExitStatus().getExitCode();
+        if (!exitCode.equals(ExitStatus.FAILED.getExitCode()) &&
+              stepExecution.getSkipCount() > 0) {
+            return new ExitStatus("COMPLETED WITH SKIPS");
+        }
+        else {
+            return null;
+        }
+    }
+}
+```
+
+在 `StepExecutionListener` 增加一些判斷邏輯，首先確認 `Step` 執行成功、在來判斷 skip 的次數是否大於 0，如果滿足條件的話，就回傳一個自訂的 `ExitStatus`。在註冊 Step 的流程時，就可以運用自訂的退出代碼來執行不同的 Step。
+
+```java
+@Bean
+public Job job() {
+    return this.jobBuilderFactory.get("job")
+        .start(step1()).on("FAILED").end()
+        .from(step1()).on("COMPLETED WITH SKIPS").to(errorPrint1())
+        .from(step1()).on("*").to(step2())
+        .end()
+        .build();
+}
+```
+
+## 停止 Step
+要結束 Step Flow 的方式有兩種：`end()` 以及 `fail()`，或是使用 `stopAndRestart()`，這邊只會介紹前兩種。
+
+#### Ending a Step
+`end()` 方法用來結束某個條件流的 `Step`。如果某個業務邏輯需要，狀況 A 時執行兩個 Step，狀況則執行 3 個 Step，那麼我們就可以使用 `end()` 主動結束，範例如下：
+
+```java
+@Bean
+public Job job() {
+    return this.jobBuilderFactory.get("job")
+        .start(step1())
+        .next(step2())
+        .on("FAILED").end()
+        .from(step2()).on("*").to(step3())
+        .end()
+        .build();
+}
+```
+![](/images/12-4.png)
+
+* 不管走哪一條分支，只要批次執行完畢且狀態為 `COMPLETED`，就不能重新啟動。
+* `end()` 方法中也可以指定要退出的狀態值，未指定的情況下狀態預設為 `COMPLETED`。
+<br/>
+
+#### Failing a Step
+用來讓一個 Step 執行失敗 ( 狀態為 `FAILED` )，跟使用 `end()` 不一樣的地方是，失敗的 Job 可以被重啟。範例如下：
+
+```java
+@Bean
+public Job job() {
+    return this.jobBuilderFactory.get("job")
+        .start(step1())
+        .next(step2()).on("FAILED").fail()
+        .from(step2()).on("*").to(step3())
+        .end()
+        .build();
+}
+```
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/current/reference/html/step.html#controllingStepFlow
