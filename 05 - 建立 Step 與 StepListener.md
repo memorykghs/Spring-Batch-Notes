@@ -83,15 +83,17 @@ public class DbReaderJobConfig {
 
    需要注意的是，`PlatformTransactionManager` 是通過加在類別上的 `@EnableBatchProcessing` 標註取得默認的物件實例，可以用 `@Autowired` 或是當作傳入參數注入到產生 Step 的方法中。而如果像上面這個例子是沒有加上 `@EnableBatchProcessing` 標註的話，就需要另外注入。
 
-另外還有一些東西可以進行設定：
+* `reader()`：註冊 ItemReader 並由 ItemReader 讀取要處理的項目。
 * `processor()`：若資料中間有需要進行轉換或處理的，可以新增 process 流程。
 * `writer()`：輸出或 commit ItemReader 提供的項目。
 <br/>
 
+* `faultTolerant()`：回傳 FaultTolerantStepBuilder，此 Builder 才能設訂 Skip 相關的參數。
 * `skip()`：在處理的過程中假設遇到某些作物，但不希望 Step 因為例外導致運行失敗，可以使用此方法被配置要跳過的邏輯。上面的例子就是當出現例外的時候要跳過，並繼續下面的批次。
+* `skipLimit()`：與 `skip()` 搭配使用，設定跳過的上限次數。
+* `noSkip()`：有些例外可以配置跳過，當然也可以設定出現某些例外時不能跳過，放在此方法內的例外將導致 Step 運行中止。另外 `skip()` 與 `.noSkip()` 放置的前後順序不會影響流程。
 <br/>
 
-* `noSkip()`：有些例外可以配置跳過，當然也可以設定出現某些例外時不能跳過，放在此方法內的例外將導致 Step 運行中止。另外 `skip()` 與 `.noSkip()` 放置的前後順序不會影響流程。
 * `listener()`：可以對某些對象建立監聽器來監控流程。
 
 通常 Step 只會運行一次，不過在某些情況下我們希望可以控制 Step 啟動的次數，就可以用 `.startLimit(times)` 方法來設定。
@@ -131,7 +133,7 @@ public interface StepListener {
 spring.batch.springBatchExample.batch.job
   |--DbReaderJobConfig.java // 修改
 spring.batch.springBatchExample.batch.listener 
-  |--Db001obListener.java
+  |--Db001JobListener.java
   |--Db001StepListener.java // 新增
 ```
 
