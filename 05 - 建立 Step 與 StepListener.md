@@ -64,11 +64,9 @@ public class DbReaderJobConfig {
 		return stepBuilderFactory.get("Db001Step")
 			.transactionManager(transactionManager)
 			.<Cars, Cars>chunk(FETCH_SIZE)
-			.reader(itemReader)
 			.faultTolerant()
 			.skip(Exception.class)
 			.skipLimit(Integer.MAX_VALUE)
-			.writer(itemWriter)
 			.listener(new D001StepListener())
 			.build();
 		}
@@ -167,17 +165,14 @@ public class Db001StepListener implements StepExecutionListener{
 * `DbReaderJobConfig.java`
 ```java
 @Bean("Db001Step")
-public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<Cars> itemWriter,
-    JpaTransactionManager transactionManager) {
+public Step dbReaderStep(JpaTransactionManager transactionManager) {
 
   return stepBuilderFactory.get("Db001Step")
       .transactionManager(transactionManager)
       .<Cars, Cars>chunk(FETCH_SIZE)
-      .reader(itemReader)
       .faultTolerant()
       .skip(Exception.class)
       .skipLimit(Integer.MAX_VALUE)
-      .writer(itemWriter)
       .listener(new Db001StepListener()) // 新增
       .build();
 }
