@@ -105,7 +105,7 @@ assertEquals(born, values[2]);
 spring.batch.springBatchExample.job
   |--DbReaderJobConfig.java // 修改
 spring.batch.springBatchExample.listener 
-  |--Db001obListener.java
+  |--Db001JobListener.java
   |--Db001StepListener.java
   |--Db001ReaderListener.java
 ```
@@ -146,7 +146,6 @@ public class DbReaderJobConfig {
 	@Bean
 	public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
 		return jobBuilderFactory.get("Db001Job")
-				// .preventRestart()
 				.start(step)
 				.listener(new Db001JobListener())
 				.build();
@@ -162,19 +161,18 @@ public class DbReaderJobConfig {
 	 */
 	@Bean("Db001Step")
 	public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<Cars> itemWriter,
-			JpaTransactionManager transactionManager) {
+			JpaTransactionManager transactionManager) { // 加入
 
 		return stepBuilderFactory.get("Db001Step")
 				.transactionManager(transactionManager)
 				.<Cars, Cars>chunk(FETCH_SIZE)
-				.reader(itemReader)
 				.faultTolerant()
 				.skip(Exception.class)
 				.skipLimit(Integer.MAX_VALUE)
-				.writer(itemWriter)
+				.reader(itemReader)
+				.writer(itemWriter) // 加入
 				.listener(new Db001StepListener())
 				.listener(new Db001ReaderListener())
-				.listener(new Db001WriterListener())
 				.build();
 	}
 
@@ -226,9 +224,11 @@ public class DbReaderJobConfig {
 }
 ```
 
-* `encoding()` - 設定輸出檔案編碼
-* `resource()` - 指定輸出檔案位置與檔名，傳入 `Resource` 對象
-* `append()` - 每一筆輸出的資料是否要接在同一個檔案後，不分割檔案
+* `encoding()`：設定輸出檔案編碼
+* `resource()`：指定輸出檔案位置與檔名，傳入 `Resource` 對象
+* `append()`：每一筆輸出的資料是否要接在同一個檔案後，不分割檔案
+* `lineAggregator()`：傳入 LineAggregator 物件
+* `headerCallback()`：寫入匯出檔案的表頭
 
 ## 建立 ItemWriterListener
 ```
