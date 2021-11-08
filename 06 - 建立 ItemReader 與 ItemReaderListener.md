@@ -18,7 +18,7 @@ Spring Batch 中提供一些已經寫好的 ItemReader 的類別，如 `FlatFile
 spring.batch.springBatchExample.job
   |--DbReaderJobConfig.java // 修改
 spring.batch.springBatchExample.listener 
-  |--Db001obListener.java
+  |--Db001JobListener.java
   |--Db001StepListener.java
 ```
 
@@ -50,7 +50,6 @@ public class DbReaderJobConfig {
     @Bean
     public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
         return jobBuilderFactory.get("Db001Job")
-                // .preventRestart()
                 .start(step)
                 .listener(new Db001JobListener())
                 .build();
@@ -64,20 +63,16 @@ public class DbReaderJobConfig {
         * @return
         */
     @Bean("Db001Step")
-    public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<Cars> itemWriter,
-            JpaTransactionManager transactionManager) {
+    public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, JpaTransactionManager transactionManager) { // 加入
 
         return stepBuilderFactory.get("Db001Step")
                 .transactionManager(transactionManager)
                 .<Cars, Cars>chunk(FETCH_SIZE)
-                .reader(itemReader)
+                .reader(itemReader) // 加入
                 .faultTolerant()
                 .skip(Exception.class)
                 .skipLimit(Integer.MAX_VALUE)
-                .writer(itemWriter)
                 .listener(new Db001StepListener())
-                .listener(new Db001ReaderListener())
-                .listener(new Db001WriterListener())
                 .build();
     }
 
@@ -151,7 +146,7 @@ public RepositoryItemReaderBuilder<T> arguments(List<?> arguments) {
 spring.batch.springBatchExample.job
   |--DbReaderJobConfig.java // 修改
 spring.batch.springBatchExample.listener 
-  |--Db001obListener.java
+  |--Db001JobListener.java
   |--Db001StepListener.java
   |--Db001ReaderListener.java // 新增
 ```
