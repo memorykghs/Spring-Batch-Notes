@@ -72,9 +72,9 @@ Spring Batch 是由 Spring Source 和 Accenture ( 埃森哲 ) 合作開發的，
 Spring3.0 的一個新特性是` O/XMapper`。O/X 對映器這個概念並不新鮮，O 代表 Object，X 代表 XML。它的目的是在 Java 物件（通常是 POJO）和 XML 文件之間來回轉換。
 
 ## 異常處理機制
-* 跳過
-* 重試
-* 重啟
+* 跳過 ( Skip )
+* 重試 ( Retry )
+* 重啟 ( Restart )
 
 ## 作業方式
 * 多執行緒
