@@ -17,7 +17,7 @@ ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進
 spring.batch.springBatchExample.batch.job
   |--DbReaderJobConfig.java // 修改
 spring.batch.springBatchExample.batch.listener 
-  |--Db001obListener.java // 新增
+  |--Db001JobListener.java
 ```
 <br/>
 
