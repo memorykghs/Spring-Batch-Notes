@@ -25,7 +25,7 @@ public BatchConfigurer batchConfigurer(DataSource dataSource) {
 }
 ```
 
-## 配置 JobRepository
+## 預設的 JobRepository
 其實只要在 Application 上使用 `@EnableBatchProcessing` 就會有預設的 JobRepository，當然 Spring Batch 也有提供客製化 JobRepository 的方法。JobRepository 的功能就是用於對 Spring Batch 中各種持久化對象的基本 CRUD 操作，像是 `JobExecution`、`StepExecution` 等物件就會被儲存在 JobRepository 中。
 
 那在預設的情況下，是怎麼自動配置 JobRepository 的呢?
@@ -187,25 +187,7 @@ class BatchConfigurerConfiguration {
 而且他的 `initialize()` 方法上有 [@PostConstruct](https://www.tpisoftware.com/tpu/articleDetails/442) 標註，代表滿足依賴條件後就會自動初始化這個類別。Spring 框架只要有 DataSource 相關的參數就會自動初始化一個 `EntityManagerFactory`，一旦沒有 `DataSource` 就會報錯。<br/>
 ![](/images/8-8.png)
 
-## 配置 JobLauncher
-當使用 `@EnableBatchProcessing` 標註時，同時也提供了一個默認的 `JobRegistry` 環境。
-最常看到時做 `JobLauncher` 介面的物件是 `SimpleJobLauncher`，並且只需要 `JobRepository` 的依賴，例：
-```java
-...
-// This would reside in your BatchConfigurer implementation
-@Override
-protected JobLauncher createJobLauncher() throws Exception {
-	SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
-	jobLauncher.setJobRepository(jobRepository);
-	jobLauncher.afterPropertiesSet();
-	return jobLauncher;
-}
-...
-```
-
-![](/images/8-1.png)
-
-## JobRegistry
+## JobRegistry 功能與原理
 在啟動批次的部分，`JobRegistry` ( 其父介面是 `JobLocator` ) 並非一定要配置，不過當想要在執行環境中追蹤哪接 Job 是可以用的，就可以使用他。而使用的最主要目的就是，在 Job 被創建的當下，透過 Job 設定的名稱映射，將這些 Job 收集起來；也可以對這接已經收集到的 Job 做一些屬性或是名稱上的設定。
 
 有兩種自動填充 `JobRegistry`，分別是 `JobRegistryBeanPostProcessor` 和 `AutomaticJobRegistrar`，這邊指針對 `JobRegistryBeanPostProcessor` 介紹。
@@ -242,7 +224,7 @@ public class MapJobRegistry implements JobRegistry {
 而 `JobFactory` 是從哪裡拿到這些 Job 對向的呢?我們來看看 `JobFactory` 的實作類別 `ApplicationContextJobFactory`。<br/>
 ![](/images/8-2.png)
 
-以下是 `ApplicationContextJobFactory` 的建構式，可以發現在初始畫時就取得整個 Application 的 context。
+以下是 `ApplicationContextJobFactory` 的建構式，可以發現在初始化時就取得整個 Application 的 context。
 ```java 
 public ApplicationContextJobFactory(String jobName, ApplicationContextFactory applicationContextFactory) {
 	@SuppressWarnings("resource")
@@ -256,30 +238,20 @@ public ApplicationContextJobFactory(String jobName, ApplicationContextFactory ap
 
 所以其實也就是從整個應用程式的 context 中拿出所需要的 Job。
 
-## 小結
-![](/images/8-4.png)
 
-## 設定 BatchConfig
+## 配置 BatchConfig
+程式面的部份，首先會先建立一個 `BatchConfig` 類別，並在裡面對整個 Spring 環境註冊 `JobRegistry` 物件。
 ```
-spring.batch.springBatchPractice.config // 新增
+spring.batch.springBatchExample.job
+  |--DbReaderJobConfig.java 
+spring.batch.springBatchExample.config
   |--BatchConfig.java // 新增
 ```
 
-`BatchConfig.java`
+* `BatchConfig.java`
 ```java
 @Configuration
 public class BatchConfig {
-
-	/**
-	 * 產生 Step Transaction
-	 * @return
-	 */
-	@Bean
-	public JpaTransactionManager jpaTransactionManager(DataSource dataSource) {
-		final JpaTransactionManager transactionManager = new JpaTransactionManager();
-		transactionManager.setDataSource(dataSource);
-		return transactionManager;
-	}
 
 	/**
 	 * 使用 JobRegistry 註冊 Job
@@ -291,12 +263,46 @@ public class BatchConfig {
 	public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry) throws Exception {
 		JobRegistryBeanPostProcessor beanProcessor = new JobRegistryBeanPostProcessor();
 		beanProcessor.setJobRegistry(jobRegistry);
-			beanProcessor.afterPropertiesSet();
+		beanProcessor.afterPropertiesSet();
 		return beanProcessor;
+	}
+	
+	/**
+	 * 產生 Step Transaction
+	 * @return
+	 */
+	@Bean
+	public JpaTransactionManager jpaTransactionManager(DataSource dataSource) {
+		final JpaTransactionManager transactionManager = new JpaTransactionManager();
+		transactionManager.setDataSource(dataSource);
+		return transactionManager;
 	}
 }
 ```
-首先會先在 `BatchConfig.java` 這個類別上加上 `@EnableBatchProcessing` 註解，讓我們可以運行 Spring Batch。加上註解後，Spring 會自動幫我們產生與 Spring Batch 相關的 Bean，並將這些 Bean 交給 Spring 容器管理。
+
+另外，由於要將建立出來的 Job 註冊到 Spring Batch 的環境中，所以使用 `@Bean` 搭配 `@Configuration` 的方式產生 `JobRegistryBeanPostProcessor` 對像，在裡面建立並將 `JobRegistry` 傳入。
+
+`jpaTransactionManager()` 方法中傳入 `DataSource` 物件，讓他依照當前的 DataSource 建立 TransacionManager。TransactionManager 需要在建立 Step 的時候注入。如同前面提到的一樣，`JobRepository` 提供在 Spring Batch 框架中對各種持久化物件 CRUD 的操作。預設環境下，如果有提供 DataSource，Spring Batch 框架會提供一個默認的 jdbc-based 的 TransactionManager，如果要是永其它的就要另外進行設定。
+
+官網提供的範例如下：
+```java
+...
+// This would reside in your BatchConfigurer implementation
+@Override
+protected JobRepository createJobRepository() throws Exception {
+    JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+    factory.setDataSource(dataSource);
+    factory.setTransactionManager(transactionManager);
+    factory.setIsolationLevelForCreate("ISOLATION_SERIALIZABLE");
+    factory.setTablePrefix("BATCH_");
+    factory.setMaxVarCharLength(1000);
+    return factory.getObject();
+}
+...
+```
+
+## 小結
+![](/images/8-4.png)
 
 ## 參考
 * https://blog.csdn.net/Chris___/article/details/103352103
