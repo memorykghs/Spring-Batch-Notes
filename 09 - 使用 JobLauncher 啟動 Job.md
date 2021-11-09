@@ -1,11 +1,37 @@
 # 08 - 使用 JobLauncher 啟動 Job
 
-## 啟動 Job
+## 配置 JobLauncher
 還記得這張圖嗎?
 
 ![](/images/1-2.png)
 
 在 Spring Batch 中要啟動 Job，就需要透過 `JobLauncher`。
+
+在配置 `JobLauncher` 之前，首先要在 `Application.java` 這個類別上加上 `@EnableBatchProcessing` 註解，讓我們可以運行 Spring Batch。
+
+```java
+@SpringBootApplication
+@EnableBatchProcessing
+public class SpringBatchPracticeApplication {
+    ...
+    ...
+}
+```
+
+加上註解後，Spring 會自動幫我們產生與 Spring Batch 相關的 Bean，同時也提供了一個默認的 `JobRegistry` 環境。最常看到實作 `JobLauncher` 介面的物件是 `SimpleJobLauncher`，並且只需要 `JobRepository` 的依賴，以下是官網的範例：
+
+```java
+...
+// This would reside in your BatchConfigurer implementation
+@Override
+protected JobLauncher createJobLauncher() throws Exception {
+	SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
+	jobLauncher.setJobRepository(jobRepository);
+	jobLauncher.afterPropertiesSet();
+	return jobLauncher;
+}
+...
+```
 
 由於是直接透過 Application 啟動 Job，在 Application 無法使用 `@Autowired` 注入 `JobLauncher`，所以直接從 `ConfigurableApplicationContext` 拿出 `JobLauncher`。
 
@@ -34,7 +60,6 @@ public class SpringBatchExmapleApplication {
 ```
 
 `JobLauncher` 的 `run()` 方法會傳入兩個參數：`Job` 與 `JobParameters`。
-
 
 ```java
 @SpringBootApplication
