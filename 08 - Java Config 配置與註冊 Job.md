@@ -282,7 +282,7 @@ public class BatchConfig {
 
 另外，由於要將建立出來的 Job 註冊到 Spring Batch 的環境中，所以使用 `@Bean` 搭配 `@Configuration` 的方式產生 `JobRegistryBeanPostProcessor` 對像，在裡面建立並將 `JobRegistry` 傳入。
 
-`jpaTransactionManager()` 方法中傳入 `DataSource` 物件，讓他依照當前的 DataSource 建立 TransacionManager。TransactionManager 需要在建立 Step 的時候注入。如同前面提到的一樣，`JobRepository` 提供在 Spring Batch 框架中對各種持久化物件 CRUD 的操作。預設環境下，如果有提供 DataSource，Spring Batch 框架會提供一個默認的 jdbc-based 的 TransactionManager，如果要是永其它的就要另外進行設定。
+`jpaTransactionManager()` 方法中傳入 `DataSource` 物件，讓他依照當前的 DataSource 建立 TransacionManager。TransactionManager 需要在建立 Step 的時候注入。如同前面提到的一樣，`JobRepository` 提供在 Spring Batch 框架中對各種持久化物件 CRUD 的操作。預設環境下，如果有提供 DataSource，Spring Batch 框架會提供一個默認的 jdbc-based 的 TransactionManager，如果要用其它的就要另外進行設定。
 
 官網提供的範例如下：
 ```java
