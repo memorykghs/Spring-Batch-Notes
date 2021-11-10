@@ -1,14 +1,27 @@
 # 13 - Restart
 第一章的時候有提到過 Spring Batch 的異常處理機制大致上可以分為下面 3 種：
-* 跳過
-* 重試
-* 重啟
+* 重啟 ( Restart )
+* 跳過 ( Skip )
+* 重試 ( Retry )
 
-重啟 ( restart ) 指的是當特定的 `JobInstance` 的 `JobExecution` 存在的情況下，Job 又重新被 launch 的狀況，也就是說，重啟的設定是針對 Job 物件。Spring Batch 中的 Job 預設都可以在其原本失敗的地方被重啟，繼續往下執行 ( 當然也有例外 )。
+當 Job 正在運行時，如果出現一些暫時性的問題，如電文打不通，配置 `Retry` 重試就可以解決，但畢竟有些錯誤不是暫時性的，有設置 `Skip` 邏輯的話，Step 終究還是會因為 skip 的次數上限導致 Job 執行失敗。
+
+這時候就可以使用 `Restart` 重啟功能，因為 Spring Batch 框架可以從先前執行失敗的地方開始繼續處理。重啟 ( restart ) 指的是當特定的 `JobInstance` 的 `JobExecution` 存在的情況下，Job 又重新被 launch 的狀況，也就是說，重啟的設定是針對 Job 物件。
+
+下面是一個做漢堡的流程，當其中一個步驟失敗，會從該步驟重新開始。~~因為切番茄不小心切失敗了你也不會從烤麵包重新做起。~~
+
+![](/images/13-1.png)
+
+Spring Batch 如何知道要在哪裡重新啟動 Job?因為每個 Job 執行後，他都會維護 MetaData，就要對 JobRepository 及其他物件持久化。
+
 
 既然 Job 預設可以被 restart，也可以將 Job 設定為不可重新啟動。只要在使用 `JobBuilderFactory` 建立 Job 時加上 `preventRestart()` 即可。
 
-
+#### 重啟行為的配置
+| 屬性 | 作用對象 | 型別 | 說明 |
+| --- | --- | --- |
+| restartble | Job | boolean | 定義 Job 是否可以被重啟，預設為 `false`。
+| allow-start-if-complete | Tasklet | boolean | 定義 Step 是不是
 
 * `Retry` — Because some products are already in the database, the flat file data is used to update the products (description, price, and so on). Even if the job runs during periods of low activity in the online store, users sometimes access the updated products, causing the database to lock the corresponding rows. The database throws a concurrency exception when the job tries to update a product in a locked row, but retrying the update again a few milliseconds later works. You can configure Spring Batch to retry automatically.
 <br/>
