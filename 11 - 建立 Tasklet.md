@@ -15,20 +15,83 @@
 ![](/images/11-1.png)
 
 ## 建立 Tasklet
-接下來就來建立一個定期清除資料庫中批次 Log 的 Tasklet 吧!
+由於想要在 `application.properties` 內設定一個預設值，先在設定檔中加入參數。
 
 ```
-spring.batch.springBatchExample.job
-  |--DbReaderJobConfig.java // 修改
-spring.batch.springBatchExample.tasklet 
-  |--ClearLogTasklet.java // 新增
+src/main/resources
+  |--application.properties // 修改
+src/main/java
+  |--spring.batch.springBatchExample
+    |--SpringBatchExmapleApplication.java // 修改
+  |--spring.batch.springBatchExample.job
+    |--DbReaderJobConfig.java // 修改
+  |--spring.batch.springBatchExample.tasklet 
+    |--ClearLogTasklet.java // 新增
 ```
+
+* `application.properties`
+```properties
+# default clear batch log month range
+defaultMonth=12
+```
+<br/>
+
+然後我們想要在啟動的時候判斷執行的 Job 名稱如果是清除 Log 的話，可以依照傳入指定要刪除的月份區間，例如給定 1 就是刪除從今天回推一個月之前的所有 Log都要清除。
+
+* `SpringBatchExmapleApplication.java`
+```java
+@SpringBootApplication
+@EnableBatchProcessing
+public class SpringBatchExmapleApplication {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpringBatchExmapleApplication.class);
+
+    public static void main(String[] args) throws NoSuchJobException, JobExecutionAlreadyRunningException,
+        JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException {
+
+        args = new String[] {"Db001Job", "1"}; // 新增
+
+        try {
+            String jobName = args[0];
+
+            ConfigurableApplicationContext context = SpringApplication.run(SpringBatchExmapleApplication.class, args);
+            Job job = context.getBean(JobRegistry.class).getJob(jobName);
+            context.getBean(JobLauncher.class).run(job, createJobParams());
+
+        } catch (Exception e) {
+            LOGGER.error("springBatchPractice執行失敗", e);
+        }
+    }
+
+    /**
+     * 產生JobParameter
+     * @return
+     */
+    private static JobParameters createJobParams() {
+
+        JobParametersBuilder builder = new JobParametersBuilder();
+        builder.addDate("executeTime", Timestamp.valueOf(LocalDateTime.now()));
+
+        if ("Db001Job".equals(jobName)) { // 新增判斷邏輯
+            if(args.length > 1) {
+                builder.addString("clsMonth", args[1]);
+            }
+        }
+
+        return builder.toJobParameters();
+    }
+}
+```
+
+接下來就來建立一個定期清除資料庫中批次 Log 的 Tasklet 吧!下面的程式碼看起來很長，不過實際上就只是要先查出 `JOB_EXECUTION_ID`，再依照取得的 `JOB_EXECUTION_ID` 去搜尋 `JOB_INSTANCE_ID` 及 `STEP_EXECUTION_ID`。
 
 * `ClearLogTasklet.java`
 ```java
+@StepScope
 @Component
-public class ClearLogTasklet implements Tasklet,        StepExecutionListener {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClearLogTasklet.class);
+public class ClearLogTasklet implements Tasklet, StepExecutionListener {
+    /** LOGGER */
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClearLogDataTasklet.class);
 
     /** 指令傳入之刪除月份範圍 */
     @Value("#{jobParameters['clsMonth']}")
@@ -38,40 +101,41 @@ public class ClearLogTasklet implements Tasklet,        StepExecutionListener {
     @Value("${defaultMonth}")
     private String defaultMonth;
 
-    /** 查詢指定區間內的 JobExecution Id */
+    /** 查詢符合n個月前紀錄的 JobExecution Id，n預設為12 */
     private static final String SQL_QUERY_JOB_EXECUTION_ID = "select BATCH_JOB_EXECUTION.JOB_EXECUTION_ID from OTRLXFXS01.BATCH_JOB_EXECUTION"
-                + " where BATCH_JOB_EXECUTION.CREATE_TIME < :clearDate";
+            + " where BATCH_JOB_EXECUTION.CREATE_TIME < :clearDate";
 
-    /** 依照 JobExecution Id 取得 JobInstance Id*/
+    /** 依 Execution Id 查詢對應 JobInstance Id */
     private static final String SQL_QUERY_JOB_INSTANCE_ID = "select BATCH_JOB_INSTANCE.JOB_INSTANCE_ID"
-                + " from OTRLXFXS01.BATCH_JOB_INSTANCE"
-                + " join OTRLXFXS01.BATCH_JOB_EXECUTION on BATCH_JOB_EXECUTION.JOB_INSTANCE_ID = BATCH_JOB_INSTANCE.JOB_INSTANCE_ID"
-                + " where BATCH_JOB_EXECUTION.JOB_EXECUTION_ID in (:jobExecutionIdList)";
+            + " from OTRLXFXS01.BATCH_JOB_INSTANCE"
+            + " join OTRLXFXS01.BATCH_JOB_EXECUTION on BATCH_JOB_EXECUTION.JOB_INSTANCE_ID = BATCH_JOB_INSTANCE.JOB_INSTANCE_ID"
+            + " where BATCH_JOB_EXECUTION.JOB_EXECUTION_ID in (:jobExecutionIdList)";
 
-    /** 依照 JobExecution Id 取得 StepExecution Id*/
+    /** 依 Execution Id 查詢對應 StepExecution Id */
     private static final String SQL_QUERY_STEP_EXECUTION_ID = "select BATCH_STEP_EXECUTION.STEP_EXECUTION_ID"
-                + " from OTRLXFXS01.BATCH_STEP_EXECUTION"
-                + " join OTRLXFXS01.BATCH_JOB_EXECUTION on BATCH_JOB_EXECUTION.JOB_EXECUTION_ID = BATCH_STEP_EXECUTION.JOB_EXECUTION_ID"
-                + " where BATCH_JOB_EXECUTION.JOB_EXECUTION_ID in (:jobExecutionIdList)";
+            + " from OTRLXFXS01.BATCH_STEP_EXECUTION"
+            + " join OTRLXFXS01.BATCH_JOB_EXECUTION on BATCH_JOB_EXECUTION.JOB_EXECUTION_ID = BATCH_STEP_EXECUTION.JOB_EXECUTION_ID"
+            + " where BATCH_JOB_EXECUTION.JOB_EXECUTION_ID in (:jobExecutionIdList)";
 
-    /** 1. 刪除 STEP_EXECUTION_CONTEXT */
+    /** 刪除 STEP_EXECUTION_CONTEXT */
     private static final String SQL_DELETE_BATCH_STEP_EXECUTION_CONTEXT = "delete from OTRLXFXS01.BATCH_STEP_EXECUTION_CONTEXT where STEP_EXECUTION_ID in (:stepExecutionIdList)";
 
-    /** 2. 刪除 JOB_EXECUTION_CONTEXT */
+    /** 刪除 JOB_EXECUTION_CONTEXT */
     private static final String SQL_DELETE_BATCH_JOB_EXECUTION_CONTEXT = "delete from OTRLXFXS01.BATCH_JOB_EXECUTION_CONTEXT where JOB_EXECUTION_ID in (:jobExecutionIdList)";
 
-    /** 3. 刪除 STEP_EXECUTION */
+    /** 刪除 STEP_EXECUTION */
     private static final String SQL_DELETE_BATCH_STEP_EXECUTION = "delete from OTRLXFXS01.BATCH_STEP_EXECUTION where STEP_EXECUTION_ID in (:stepExecutionIdList)";
 
-    /** 4. 刪除 JOB_EXECUTION_PARAMS */
+    /** 刪除 BATCH_JOB_EXECUTION_PARAMS */
     private static final String SQL_DELETE_BATCH_JOB_EXECUTION_PARAMS = "delete from OTRLXFXS01.BATCH_JOB_EXECUTION_PARAMS where JOB_EXECUTION_ID in (:jobExecutionIdList)";
 
-    /** 5. 刪除 JOB_EXECUTION */
+    /** 刪除 JOB_EXECUTION */
     private static final String SQL_DELETE_BATCH_JOB_EXECUTION = "delete from OTRLXFXS01.BATCH_JOB_EXECUTION where CREATE_TIME < :clearDate";
 
-    /** 6. 刪除 JOB_INSTANCE */
+    /** 刪除 BATCH_JOB_INSTANCE */
     private static final String SQL_DELETE_BATCH_JOB_INSTANCE = "delete from OTRLXFXS01.BATCH_JOB_INSTANCE where JOB_INSTANCE_ID in (:jobInstanceIdList)";
 
+    /** jdbcTemplate */
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -91,65 +155,66 @@ public class ClearLogTasklet implements Tasklet,        StepExecutionListener {
 
         int totalCount = 0;
 
-        LocalDate clearDate = LocalDate.now().minusMonths(Long.parseLong(defaultMonth));
+        LocalDate clearDate = LocalDate.now();
 
         if (StringUtils.isNotBlank(clsMonth)) {
-                clearDate = LocalDate.now().minusMonths(Long.parseLong(clsMonth));
+            clearDate = clearDate.minusMonths(Long.parseLong(clsMonth));
+        }else {
+            clearDate = clearDate.minusMonths(Long.parseLong(defaultMonth));
         }
 
-        LOGGER.info("清除" + clearDate + "之前Spring Batch history log");
+        LOGGER.info("清除{}之前Spring Batch history log", clearDate);
 
         Map<String, Object> paramsMap = new HashMap<>();
-        paramsMap.put("clearDate", Timestamp.valueOf("2021-10-09 00:00:00"));
-        //    paramsMap.put("clearDate", Timestamp.valueOf(clearDate.atStartOfDay()));
+        paramsMap.put("clearDate", Timestamp.valueOf(clearDate.atStartOfDay()));
 
         // get JOB_EXECUTION_ID
         List<BigDecimal> jobExecutionIdList = jdbcTemplate.queryForList(SQL_QUERY_JOB_EXECUTION_ID, paramsMap).stream()
-                        .map(map -> (BigDecimal) map.get("JOB_EXECUTION_ID")).collect(Collectors.toList());
+                .map(map -> (BigDecimal) map.get("JOB_EXECUTION_ID")).collect(Collectors.toList());
         if (jobExecutionIdList.isEmpty()) {
-                LOGGER.info("該日期以前無EXECUTION_ID資料");
-                return RepeatStatus.FINISHED;
+            LOGGER.info("該日期以前無EXECUTION_ID資料");
+            return RepeatStatus.FINISHED;
         }
 
         // get STEP_EXECUTION_ID
         paramsMap.put("jobExecutionIdList", jobExecutionIdList);
-        List<BigDecimal> stepExecutionIdList = jdbcTemplate.queryForList(SQL_QUERY_STEP_EXECUTION_ID, paramsMap)
-                        .stream().map(map -> (BigDecimal) map.get("STEP_EXECUTION_ID")).collect(Collectors.toList());
+        List<BigDecimal> stepExecutionIdList = jdbcTemplate.queryForList(SQL_QUERY_STEP_EXECUTION_ID, paramsMap).stream()
+                .map(map -> (BigDecimal) map.get("STEP_EXECUTION_ID")).collect(Collectors.toList());
 
         // get JOB_INSTANCE_ID
         List<BigDecimal> jobInstanceIdList = jdbcTemplate.queryForList(SQL_QUERY_JOB_INSTANCE_ID, paramsMap).stream()
-                        .map(map -> (BigDecimal) map.get("JOB_INSTANCE_ID")).collect(Collectors.toList());
+                .map(map -> (BigDecimal) map.get("JOB_INSTANCE_ID")).collect(Collectors.toList());
 
         // 1. clear BATCH_STEP_EXECUTION_CONTEXT
         paramsMap.put("stepExecutionIdList", stepExecutionIdList);
         int rowCount = jdbcTemplate.update(SQL_DELETE_BATCH_STEP_EXECUTION_CONTEXT, paramsMap);
-        LOGGER.debug("BATCH_STEP_EXECUTION_CONTEXT: {}", rowCount);
+        LOGGER.debug("BATCH_STEP_EXECUTION_CONTEXT count: {}", rowCount);
         totalCount += rowCount;
 
         // 2. clear BATCH_JOB_EXECUTION_CONTEXT
         rowCount = jdbcTemplate.update(SQL_DELETE_BATCH_JOB_EXECUTION_CONTEXT, paramsMap);
-        LOGGER.debug("JOB_EXECUTION_CONTEXT: {}", rowCount);
+        LOGGER.debug("JOB_EXECUTION_CONTEXT count: {}", rowCount);
         totalCount += rowCount;
 
         // 3. clear BATCH_STEP_EXECUTION
         rowCount = jdbcTemplate.update(SQL_DELETE_BATCH_STEP_EXECUTION, paramsMap);
-        LOGGER.debug("BATCH_STEP_EXECUTION: {}", rowCount);
+        LOGGER.debug("BATCH_STEP_EXECUTION count: {}", rowCount);
         totalCount += rowCount;
 
         // 4. clear BATCH_JOB_EXECUTION_PARAMS
         rowCount = jdbcTemplate.update(SQL_DELETE_BATCH_JOB_EXECUTION_PARAMS, paramsMap);
-        LOGGER.debug("JOB_EXECUTION_PARAMS: {}", rowCount);
+        LOGGER.debug("JOB_EXECUTION_PARAMS count: {}", rowCount);
         totalCount += rowCount;
 
         // 5. clear BATCH_JOB_EXECUTION
         rowCount = jdbcTemplate.update(SQL_DELETE_BATCH_JOB_EXECUTION, paramsMap);
-        LOGGER.debug("BATCH_JOB_EXECUTION: {}", rowCount);
+        LOGGER.debug("BATCH_JOB_EXECUTION count: {}", rowCount);
         totalCount += rowCount;
 
         // 6. clear BATCH_JOB_INSTANCE
         paramsMap.put("jobInstanceIdList", jobInstanceIdList);
         rowCount = jdbcTemplate.update(SQL_DELETE_BATCH_JOB_INSTANCE, paramsMap);
-        LOGGER.debug("BATCH_JOB_INSTANCE: {}", rowCount);
+        LOGGER.debug("BATCH_JOB_INSTANCE count: {}", rowCount);
         totalCount += rowCount;
 
         contribution.incrementWriteCount(totalCount);
@@ -158,11 +223,26 @@ public class ClearLogTasklet implements Tasklet,        StepExecutionListener {
     }
 }
 ```
-由於只有一個 `Tasklet`，所以 Listener 的部分就一起實作，寫在同一個 class 裡面。因為 Batch 的 Log 每張表之間是有關連的，所以必須依照順序進行刪除......
+由於只有一個 `Tasklet`，所以 Listener 的部分就一起實作，寫在同一個 class 裡面。刪除的部分看起來很多，因為 Batch 的 Log 每張表之間是有關連的，所以必須依照順序進行刪除......
+
+另外在宣告屬性的地方，有兩行：
+```java
+/** 指令傳入之刪除月份範圍 */
+@Value("#{jobParameters['clsMonth']}")
+private String clsMonth;
+
+/** 預設刪除區間 */
+@Value("${defaultMonth}")
+private String defaultMonth;
+```
+
+前幾章提到 `JobParameter` 可以在執行時期 ( run time ) 取得，取得的方式就是使用在屬性上使用 `@Value` 標籤，用 `#` 指定取得的執行環境。`$` 則是取得設定檔的參數。
 <br/>
 
+建立完 `Tasklet` 後，回到 `DbReaderJobConfig.java` 中新增一個 Step，並注入剛剛撰寫的 `Tasklet`。
 * `DbReaderJobConfig.java`
 ```java
+...
 @Bean
 public Job dbReaderJob(@Qualifier("clearLogStep") Step step) {
     return jobBuilderFactory.get("Db001Job")
@@ -172,15 +252,16 @@ public Job dbReaderJob(@Qualifier("clearLogStep") Step step) {
 }
 
 @Bean("clearLogStep")
-public Step clearLogStep(JpaTransactionManager transactionManager) {
+public Step clearLogStep(JpaTransactionManager transactionManager, ClearLogDataTasklet clearLogDataTasklet) {
 
     return stepBuilderFactory.get("Db001Step")
         .transactionManager(transactionManager)
-        .tasklet(new ClearLogTasklet())
+        .tasklet(clearLogDataTasklet) // 加入 Tasklet
         .build();
 }
+...
 ```
-在裡面新增一個 `clearLogStep()` 方法。
+<br/>
 
 ## 小結
 稍微比較一下 `Chunk` 及 `Tasklet` 的差異：
@@ -194,6 +275,7 @@ public Step clearLogStep(JpaTransactionManager transactionManager) {
 ## 參考
 * https://docs.spring.io/spring-batch/docs/current/reference/html/step.html#taskletStep
 * https://www.javainuse.com/spring/batchtaskchunk
+* https://www.chkui.com/article/spring/spring_core_resources_management 
 
 ###### 梗圖來源
 * [傷腦筋](https://kknews.cc/news/r92zxov.html)
