@@ -14,20 +14,56 @@
 
 Spring Batch 如何知道要在哪裡重新啟動 Job?因為每個 Job 執行後，他都會維護 MetaData，就要對 JobRepository 及其他物件持久化。
 
+## 重啟行為的配置
+可以分成 Job 或是 Step 的重啟：
+| 屬性 | 作用對象 | 型別 | 說明 |
+| --- | --- | --- | --- |
+| restartble | Job | boolean | 定義 Job 是否可以被重啟，預設為 `false`。
+| allow-start-if-complete | Step | boolean | 定義 Step 是不是
+| start-limit | Step | Integer | 設定可以被重起的次數，預設值為 `Integer.MAX_VALUE`。
 
+#### 避免 Job 重啟
 既然 Job 預設可以被 restart，也可以將 Job 設定為不可重新啟動。只要在使用 `JobBuilderFactory` 建立 Job 時加上 `preventRestart()` 即可。
 
-#### 重啟行為的配置
-| 屬性 | 作用對象 | 型別 | 說明 |
-| --- | --- | --- |
-| restartble | Job | boolean | 定義 Job 是否可以被重啟，預設為 `false`。
-| allow-start-if-complete | Tasklet | boolean | 定義 Step 是不是
-
-* `Retry` — Because some products are already in the database, the flat file data is used to update the products (description, price, and so on). Even if the job runs during periods of low activity in the online store, users sometimes access the updated products, causing the database to lock the corresponding rows. The database throws a concurrency exception when the job tries to update a product in a locked row, but retrying the update again a few milliseconds later works. You can configure Spring Batch to retry automatically.
+```java
+@Bean
+public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
+    return jobBuilderFactory.get("Db001Job")
+            .preventRestart() // 設定 Job 不可重啟
+            .start(step)
+            .listener(new Db001JobListener())
+            .build();
+}
+```
 <br/>
 
-* `Restart` — If Spring Batch has to skip more than 10 products because of badly formatted lines, the input file is considered invalid and should go through a validation phase. The job fails as soon as you reach 10 skipped products, as defined in the configuration. An operator will analyze the input file and correct it before restarting the import. Spring Batch can restart the job on the line that caused the failed execution. The work performed by the previous execution isn’t lost.
+#### 設定 Step 的重啟
+###### Allow restart if Completed
+```java
+@Bean
+public Step step1() {
+	return this.stepBuilderFactory.get("step1")
+                .<String, String>chunk(10)
+                .reader(itemReader())
+                .writer(itemWriter())
+                .allowStartIfComplete(true) // allow restart
+                .build();
+}
+```
 
+###### 設定重起的次數上限
+```java
+@Bean
+public Step step1() {
+	return this.stepBuilderFactory.get("step1")
+                .<String, String>chunk(10)
+                .reader(itemReader())
+                .writer(itemWriter())
+                .startLimit(1) // 設定重啟次數上限
+                .build();
+}
+```
+<br/>
 
 ## 參考
 * https://livebook.manning.com/book/spring-batch-in-action/chapter-8/24
