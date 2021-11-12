@@ -264,6 +264,37 @@ public class Db001WriterListener implements ItemWriteListener<CarsDto> {
 
 }
 ```
+<br/>
+
+再來一樣將 Listener 設定到 Step。
+* `DbReaderJobConfig.java`
+```java
+/**
+ * 建立 Step
+ * 
+ * @param itemReader
+ * @param itemWriter
+ * @param transactionManager
+ * @return
+ */
+@Bean("Db001Step")
+public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<Cars> itemWriter,
+    JpaTransactionManager transactionManager) { // 加入
+
+    return stepBuilderFactory.get("Db001Step")
+                .transactionManager(transactionManager)
+                .<Cars, Cars>chunk(FETCH_SIZE)
+                .faultTolerant()
+                .skip(Exception.class)
+                .skipLimit(Integer.MAX_VALUE)
+                .reader(itemReader)
+                .writer(itemWriter) // 加入
+                .listener(new Db001StepListener())
+                .listener(new Db001ReaderListener())
+				.listener(new Db001WriterListener()) // 加入
+                .build();
+}
+```
 
 ## 優化
 由於 `FlatFileItemWriterBuilder` 提供了流水線的裝配過程，所以其實可以使用 `delimited()`，代表要建立一個 `DelimitedLineAggregator` 並注入。`names()` 方法則是對 `FieldExtractor` 設定對應欄位規則。
