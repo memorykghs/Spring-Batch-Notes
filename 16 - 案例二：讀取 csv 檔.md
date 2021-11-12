@@ -126,7 +126,7 @@ tokenizer.setDelimiter("#"); // 設定其他劃分符號
 <br/>
 
 ## FieldSetMapper
-FieldSetMapper 介面是將 FieldSet 轉換為程式面物件的介面。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 `DefaultLineMapper、``BeanWrapperFieldSetMapper` 及 `PassThroughFieldSetMapper` 等等。經過 `FieldSetMapper` 轉換後會回傳目標物件。
+FieldSetMapper 介面是將 FieldSet 轉換為程式面物件的介面。FieldSetMapper 通常跟 LineTokenizer 一起使用。轉換的過程會由一串 String &rarr; 切分為 FieldSet &rarr; 目標 Object。實現此界面的類別有 `DefaultLineMapper`、`BeanWrapperFieldSetMapper` 及 `PassThroughFieldSetMapper` 等等。經過 `FieldSetMapper` 轉換後會回傳目標物件。
 ```java
 public interface FieldSetMapper<T> {
 	
