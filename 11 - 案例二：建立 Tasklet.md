@@ -3,7 +3,9 @@
 
 不過當今天 Step 中只要做一件簡單的事情，例如刪除資料，沒有讀取也沒有輸出的話，依照前面介紹的 Chunk-oriented 的模式，會需要建立一個 ItemReader 並在處理結束時回傳 `null`，再建立一個不做任何事情的 ItemWriter，可是這樣的動作顯得有些多此一舉，畢竟我就只是想要刪除資料而已為什麼需要這麼麻煩!?<br/>
 
-![](/images/傷腦筋.jpg)
+<font color="red">Reader 回傳 null 應該就不會進到 Writer 了。</font>
+
+![](/images/傷腦筋.png)
 
 所以 Spring Batch 框架額外提供了 `TaskletStep` 來處理類似的情況。
 
