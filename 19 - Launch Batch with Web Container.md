@@ -1,16 +1,22 @@
 # 19 - 使用 Web Container 設定
+Spring Batch 是一個可以依附在 Spring 應用程式環境的輕量級框架，表示 Spring Batch 可以在 Web 應用程式的環境下隨時使用，不需要特別使用 run as Java Application 啟動它，也可以在 Web 應用程式中使用 schedule 排程。
 
-4.4. Launching from a web application
-Spring Batch is a lightweight framework that can live in a simple Spring application context. Here, we look at configuring a Spring Batch environment in a web application. This makes Spring Batch available at any time; there’s no need to spawn a dedicated Java process to launch a job. We can also embed a Java scheduler in the same web application context and become independent of any system schedulers. Figure 4.8 illustrates that a Spring application context can be contained in a web application. Note that the job beans can also use any available services, like data sources, data access objects, and business services.
+下圖代表了應用程式環境可以包含 Spring 執行環境。<br/>
+![](/images/19-1.png)
 
+讓 Spring Batch 依附在應用程式中非常方便，在進一步於這種架構下通過 Http 請求觸發批次作業前，我們先來看看如何在 Web 應用程式中配置 Spring Batch。
 
-Hosting Spring Batch in a web application is convenient, but what about pushing this architecture further and triggering jobs through HTTP requests? This is useful when an external system triggers jobs and that system cannot easily communicate with the Spring Batch environment. But before we study how to use HTTP to trigger jobs, let’s see how to configure Spring Batch in a web application.
+## 在 Web 應用程式中遷入 Spring Batch
+Spring Framework 提供了一個 servlet 偵聽器類別 `ContextLoaderListener`，`ContextLoaderListener` 會根據 Web 應用程式的生命週期管理執行環境的生命週期。
 
-4.4.1. Embedding Spring Batch in a web application
-The Spring Framework provides a servlet listener class, the ContextLoaderListener, that manages the application context’s lifecycle according to the web application lifecycle. The application context is called the root application context of the web application. You configure the servlet listener in the web.xml file of the web application, as shown in the following listing.
+預設情況下，`ContextLoaderListener` 類使用 Web 應用程式的 `WEB-INF` 目錄中的 `applicationContext.xml` 文件來建立應用程式的環境，裡面應包含 Spring Batch Infrastructure、Job、schedule ( 如果有 ) 和應用程序服務的配置。
+
+![](/images/19-2.png)
 
 4.4.2. Launching a job with an HTTP request
 Imagine that you deployed your Spring Batch environment in a web application, but a system scheduler is in charge of triggering your Spring Batch jobs. A system scheduler like cron is easy to configure, and that might be what your administration team prefers to use. But how can cron get access to Spring Batch, which is now in a web application? You can use a command that performs an HTTP request and schedule that command in the crontab! Here’s how to perform an HTTP request with a command-line tool like wget:
+
+![](/images/19-3.png)
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/job.html#runningJobsFromWebContainer
