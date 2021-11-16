@@ -15,3 +15,5 @@ Imagine that you deployed your Spring Batch environment in a web application, bu
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/job.html#runningJobsFromWebContainer
 * https://livebook.manning.com/book/spring-batch-in-action/chapter-4/197
+* https://www.javainuse.com/spring/bootbatch
+* https://stackoverflow.com/questions/53687925/how-to-launch-spring-batch-job-asynchronously
