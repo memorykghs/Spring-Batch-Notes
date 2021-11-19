@@ -323,12 +323,10 @@ public class FileReaderJobConfig {
   public ItemReader<Car> getItemReader() {
     return new FlatFileItemReaderBuilder<Car>().name("File001FileReader")
       .encoding("UTF-8")
-      .resource(new ClassPathResource("file/CARS.csv"))
+      // .resource(new FileSystemResource("D:/Cars.csv"))
+      .resource(new ClassPathResource("csv/Cars.csv"))
       .linesToSkip(1)
-      .delimited()
-      .names(MAPPER_FIELD)
-      .fieldSetMapper(new BeanWrapperFieldSetMapper<Car>())
-      // .lineMapper(getCarLineMapper())
+      .lineMapper(getCarLineMapper())
       .build();
   }
 
@@ -356,6 +354,27 @@ public class FileReaderJobConfig {
 ```
 
 在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。`linesToSkip()` 方法用來跳過表頭。
+
+再來，依照檔案存放的位置使用不同的協定讀取檔案，`ClassPathResource` 只能讀到專案內預設路徑下的東西，使用 `FileSystemResource` 則可以讀取本機內的路徑。`lineMapper()` 方法中我們另外寫了一個 `private` 方法 `getCarLineMapper()` 用來產生上面提到的 `LineMapper`、`LineTokenizer` 以及 `FieldSetMapper`，最後回傳 `LineMapper` 物件回傳。
+
+跟 FileItemWriter 一樣，我們可以將這個過程再簡化：
+```java
+...
+@Bean("File001FileReader")
+public ItemReader<Car> getItemReader(@Value("${filePath}")
+String filePath) {
+return new FlatFileItemReaderBuilder<Car>().name("File001FileReader")
+	.encoding("UTF-8")
+	// .resource(new FileSystemResource("D:/Cars.csv"))
+        .resource(new ClassPathResource("csv/Cars.csv"))
+	.linesToSkip(1)
+	.delimited() // 使用 DelimitedLineTokenizer
+	.names(MAPPER_FIELD) // 設定對應欄位
+	.fieldSetMapper(new BeanWrapperFieldSetMapper<Car>()) // 設定
+	.build();
+}
+...
+```
 
 ## 參考
 * https://stackoverflow.com/questions/66234905/reading-csv-data-in-spring-batch-creating-a-custom-linemapper
