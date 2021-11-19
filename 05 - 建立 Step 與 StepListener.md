@@ -76,10 +76,21 @@ public class DbReaderJobConfig {
 在上面的步驟中，同樣透過 StepBuilderFactory 的 `get()` 方法取得 StepBuilder 物件，並為這個產生出來的 Step 實例進行命名。後面則包含了一些在建立 Step 過程中所需的依賴：
 * `reader()`：註冊 ItemReader 並由 ItemReader 讀取要處理的項目。
 * `transactionManager()`：Spring 提供 `PlatformTransactionManager` 類別，用來在處理資料時進行交易 ( begins and commit )。
+  
+  需要注意的是，`PlatformTransactionManager` 是通過加在類別上的 `@EnableBatchProcessing` 標註取得默認的物件實例，可以用 `@Autowired` 或是當作傳入參數注入到產生 Step 的方法中。而如果像上面這個例子是沒有加上 `@EnableBatchProcessing` 標註的話，就需要另外注入。
+  
+  這邊預設使用的是 `JpaTransactionManager`，使用此類別需要多 import dependency：
+  ```xml
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+  </dependency>
+  ```
+  <br/>
 * `chunk()`：用來設定每批資料的數量，泛型的第一個參數是輸入的資料格式，後面的代表經過處理後，要用 ItemWriter 輸出的資料格式。
 <br/>
 
-   需要注意的是，`PlatformTransactionManager` 是通過加在類別上的 `@EnableBatchProcessing` 標註取得默認的物件實例，可以用 `@Autowired` 或是當作傳入參數注入到產生 Step 的方法中。而如果像上面這個例子是沒有加上 `@EnableBatchProcessing` 標註的話，就需要另外注入。
+   
 
 * `reader()`：註冊 ItemReader 並由 ItemReader 讀取要處理的項目。
 * `processor()`：若資料中間有需要進行轉換或處理的，可以新增 process 流程。
