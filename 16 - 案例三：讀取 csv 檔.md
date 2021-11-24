@@ -247,14 +247,15 @@ private LineMapper<BookInfoDto> getBookInfoLineMapper() {
 最後，根據上面的一些依賴，建立 FlatFileItemReader。
 ```
 spring.batch.springBatchPractice.job
-  |--BCHBORED001JobConfig.java // 修改
+  |--DbReaderJobConfig.java
+  |--FileReaderJobConfig.java // 新增
 spring.batch.springBatchPractice.listener
-  |--BCHBORED001JobListener.java
-  |--BCHBORED001ReaderListener.java // 新增
+  |--DbReaderJobListener.java
+  |--FileReaderJobListener.java // 新增
 ```
 <br/>
 
-* `BCHBORED001JobConfig.java`
+* `FileReaderJobConfig.java`
 ```java
 @Configuration
 public class FileReaderJobConfig {

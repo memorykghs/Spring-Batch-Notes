@@ -95,7 +95,7 @@ public interface JobOperator {
 }
 ```
 
-`JobOperator` 的介面綜合許多不同街口的方法，例如 `JobLauncher`、`JobRepository`、`JobExplorer`、和 `JobRegistry`。所以在 `BatchConfig` 中自訂 `JobOperator` 時必須依賴上面提到的實例物件。以下提供一個簡單設定 `SimpleJobOperator` 的範例：
+`JobOperator` 的介面綜合許多不同接口的方法，例如 `JobLauncher`、`JobRepository`、`JobExplorer`、和 `JobRegistry`。所以在 `BatchConfig` 中自訂 `JobOperator` 時必須依賴上面提到的實例物件。以下提供一個簡單設定 `SimpleJobOperator` 的範例：
 
 ```java
 @Bean
