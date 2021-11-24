@@ -1,4 +1,4 @@
-# 19 - 使用 Web Container 設定
+# 19 - 從 Web 應用程式啟動 Job
 Spring Batch 是一個可以依附在 Spring 應用程式環境的輕量級框架，表示 Spring Batch 可以在 Web 應用程式的環境下隨時使用，不需要特別使用 run as Java Application 啟動它，也可以在 Web 應用程式中使用 schedule 排程。
 
 下圖代表了應用程式環境可以包含 Spring 執行環境。<br/>
@@ -94,12 +94,7 @@ spring.batch.springBatchPractice.controller
 public class SpringBatchExmapleApplication {
 
     public static void main(String[] args) {
-        try {
-            SpringApplication.run(SpringBatchExmapleApplication.class, args);
-
-        } catch (Exception e) {
-            LOGGER.error("springBatchPractice執行失敗", e);
-        }
+        SpringApplication.run(SpringBatchExmapleApplication.class, args);
     }
 }
 ```
@@ -207,7 +202,7 @@ try {
 spring.batch.springBatchPractice
   |--SpringBatchExmapleApplication.java
 spring.batch.springBatchPractice.controller
-  |--BatchConfig.java // 修改
+  |--BatchController.java // 修改
 spring.batch.springBatchPractice.batch.job
   |--DbReaderJobConfig.java // 修改
 ```
@@ -240,7 +235,10 @@ public class BatchController {
     public String doDbReader001Job() {
 
         try {
-            jobLauncher.run(jobRegistry.getJob("Db001Job"), new JobParameters());
+            JobParametersBuilder builder = new JobParametersBuilder();
+            builder.addString("sameParameter", "string");
+
+            jobLauncher.run(jobRegistry.getJob("Db001Job"), builder.toJobParameters());
 
         } catch (JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException
 					| JobParametersInvalidException | NoSuchJobException e) {
@@ -271,8 +269,6 @@ public class DbReaderJobConfig {
 ```
 
 這樣就不需要每次都要產生不同的 `JobParameter`。
-
-![](/images/icon-question.png) JobLauncher 可以不用傳參數進去嗎?
 
 ## 參考
 * https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/job.html#runningJobsFromWebContainer
