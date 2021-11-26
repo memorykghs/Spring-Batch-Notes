@@ -35,6 +35,7 @@ public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReade
             .skipLimit(Integer.MAX_VALUE)
             .retry(ErrorInputException.class) // 加入
             .retry(DataNotFoundException.class) // 加入
+            .retryLimit(1) // 加入
             .reader(itemReader)
             .processor(processor)
             .writer(itemWriter)
@@ -52,7 +53,7 @@ public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReade
 
 `retry()` 其實是 `FaultTolerantStepBuilder` 的方法，也就是說跟設定 Skip 邏輯一樣，要先使用 `faultTolerant()` 換成 `FaultTolerantStepBuilder` 才能設定 Retry 機制。
 
-然後修改一下 `ItemProcessor` 中的邏輯，讓它丟出我們設定在 Retry 機制中的 Exception。
+然後修改一下 `ItemProcessor` 中的邏輯，讓它丟出我們設定在 Retry 機制中的 Exception。然後使用 `retryLimit()` 方法設定 Retry 的上限次數 ( 不一定需要設定 )。
 
 * `DBItemProcessor.java`
 ```java
