@@ -93,7 +93,11 @@ assertEquals(born, values[2]);
 
 `BeanWrapperFieldExtractor` 適用於物件實體的轉換，使用時必須先給定一個 String 陣列，裡面設定每個屬性的名稱，執行時期就會依照給定的名稱映射，呼叫對應屬性的 `getter()` 方法。String 陣列內欄位名稱的順序會影響映射的結果。
 
-最後總結一下 FlatFileItemWriter 的結構與關係，如下圖。<br/>
+到現在目前的心情應該會跟下面一樣。
+
+![](/images/黑人問號.jpg)
+
+總結一下 FlatFileItemWriter 的結構與關係，如下圖。<br/>
 ![](/images/7-1.png)
 
 其中 `FlatFileHeaderCallback` 與 `FlatFileFooterCallback` 用於撰寫表頭表尾。<br/>
@@ -322,4 +326,4 @@ public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReade
 * https://livebook.manning.com/book/spring-batch-in-action/chapter-6/38
 
 ###### 梗圖來源
-* [黑人問號](https://www.google.com/url?sa=i&url=https%3A%2F%2Fmemes.tw%2Fwtf%2F152369&psig=AOvVaw3mQWRNzgy4NK_S-hGumLUP&ust=1635002881748000&source=images&cd=vfe&ved=0CAwQjhxqFwoTCJj348uq3vMCFQAAAAAdAAAAABAD)
+* 黑人問號 - 鸚鵡兄弟梗圖倉庫
