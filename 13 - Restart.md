@@ -19,7 +19,7 @@ Spring Batch 如何知道要在哪裡重新啟動 Job?因為每個 Job 執行後
 | 屬性 | 作用對象 | 型別 | 說明 |
 | --- | --- | --- | --- |
 | restartble | Job | boolean | 定義 Job 是否可以被重啟，預設為 `false`。
-| allow-start-if-complete | Step | boolean | 定義 Step 是不是
+| allow-start-if-complete | Step | boolean | 定義 Step 是不是在 `COMPLETED` 的狀態下可以被重啟。
 | start-limit | Step | Integer | 設定可以被重起的次數，預設值為 `Integer.MAX_VALUE`。
 
 #### 避免 Job 重啟

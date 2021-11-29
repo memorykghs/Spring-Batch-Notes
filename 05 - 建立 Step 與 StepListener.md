@@ -67,7 +67,6 @@ public class DbReaderJobConfig {
 			.faultTolerant()
 			.skip(Exception.class)
 			.skipLimit(Integer.MAX_VALUE)
-			.listener(new D001StepListener())
 			.build();
 		}
 }

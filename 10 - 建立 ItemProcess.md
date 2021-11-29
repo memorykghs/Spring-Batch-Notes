@@ -20,14 +20,14 @@ spring.batch.springBatchExample.batch.job
 spring.batch.springBatchExample.batch.processor // 新增
   |--DBItemProcessor.java // 新增
 spring.batch.springBatchExample.dto
-  |--CarsDto.java // 新增
+  |--CarSpreadDto.java // 新增
 ```
 
 先建立一個 DTO 用來裝轉換完的資料。
-* `CarsDto.java`
+* `CarSpreadDto.java`
 ```java
 @Data
-public class CarsDto implements Serializable {
+public class CarSpreadDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,22 +44,22 @@ public class CarsDto implements Serializable {
 * `DBItemProcessor.java`
 ```java
 @Component
-public class DBItemProcessor implements ItemProcessor<Cars, CarsDto> {
+public class DBItemProcessor implements ItemProcessor<Cars, CarSpreadDto> {
 
     @Override
-    public CarsDto process(Cars item) throws Exception {
+    public CarSpreadDto process(Cars item) throws Exception {
 
         // 計算每一廠牌汽車底價及售價價差
-        CarsDto carsDto = new CarsDto();
-        carsDto.setManufacturer(item.getManufacturer());
-        carsDto.setType(item.getType());
-        carsDto.setSpread(item.getPrice().subtract(item.getMinPrice()));
-        return carsDto;
+        CarSpreadDto CarSpreadDto = new CarSpreadDto();
+        CarSpreadDto.setManufacturer(item.getManufacturer());
+        CarSpreadDto.setType(item.getType());
+        CarSpreadDto.setSpread(item.getPrice().subtract(item.getMinPrice()));
+        return CarSpreadDto;
     }
 }
 ```
 
-`DBItemProcessor` 接收讀到的 Entity `Cars` 為傳入對象，轉換完的資料我們另外建立一個 DTO `CarsDto` 容器存放。也就是說經過 ItemProcess 轉換完的資料格式是 `CarsDto` 🚗🚓🚕。
+`DBItemProcessor` 接收讀到的 Entity `Cars` 為傳入對象，轉換完的資料我們另外建立一個 DTO `CarSpreadDto` 容器存放。也就是說經過 ItemProcess 轉換完的資料格式是 `CarSpreadDto` 🚗🚓🚕。
 
 最後一樣要在 JobConfig 將寫好的 ItemProcessor 註冊進去。
 
@@ -112,12 +112,12 @@ public class DbReaderJobConfig {
      * @return
      */
     @Bean("Db001Step")
-    public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<CarsDto> itemWriter,
-            ItemProcessor<Cars, CarsDto> processor, JpaTransactionManager transactionManager) { // 注入
+    public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<CarSpreadDto> itemWriter,
+            ItemProcessor<Cars, CarSpreadDto> processor, JpaTransactionManager transactionManager) { // 注入
 
         return stepBuilderFactory.get("Db001Step")
                 .transactionManager(transactionManager)
-                .<Cars, CarsDto>chunk(FETCH_SIZE)
+                .<Cars, CarSpreadDto>chunk(FETCH_SIZE)
                 .faultTolerant()
                 .skip(Exception.class)
                 .skipLimit(Integer.MAX_VALUE)
@@ -136,13 +136,13 @@ public class DbReaderJobConfig {
      * @return
      */
     @Bean("Db001JpaReader")
-    public RepositoryItemReader<CarsDto> itemReader() {
+    public RepositoryItemReader<CarSpreadDto> itemReader() {
 
         Map<String, Direction> sortMap = new HashMap<>();
         sortMap.put("Manufacturer", Direction.ASC);
         sortMap.put("Type", Direction.ASC);
 
-        return new RepositoryItemReaderBuilder<CarsDto>()
+        return new RepositoryItemReaderBuilder<CarSpreadDto>()
                 .name("Db001JpaReader")
                 .pageSize(FETCH_SIZE)
                 .repository(carRepo)
@@ -183,12 +183,12 @@ spring.batch.springBatchExample.batch.processor
 spring.batch.springBatchExample.batch.listener
   |--Db001ProcessorListener.java // 新增
 spring.batch.springBatchExample.dto
-  |--CarsDto.java
+  |--CarSpreadDto.java
 ```
 
 * `Db001ProcessorListener.java`
 ```java
-public class Db001ProcessorListener implements ItemProcessListener<Cars, CarsDto>{
+public class Db001ProcessorListener implements ItemProcessListener<Cars, CarSpreadDto>{
     
     private static final Logger LOGGER = LoggerFactory.getLogger(Db001ProcessorListener.class);
 
@@ -200,7 +200,7 @@ public class Db001ProcessorListener implements ItemProcessListener<Cars, CarsDto
     }
 
     @Override
-    public void afterProcess(Cars item, CarsDto result) {
+    public void afterProcess(Cars item, CarSpreadDto result) {
         LOGGER.info("Spread = {}", result.getSpread());
         
     }
@@ -218,12 +218,12 @@ public class Db001ProcessorListener implements ItemProcessListener<Cars, CarsDto
 ```java
 ...
 @Bean("Db001Step")
-public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<CarsDto> itemWriter,
-        ItemProcessor<Cars, CarsDto> processor, JpaTransactionManager transactionManager) {
+public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<CarSpreadDto> itemWriter,
+        ItemProcessor<Cars, CarSpreadDto> processor, JpaTransactionManager transactionManager) {
 
     return stepBuilderFactory.get("Db001Step")
             .transactionManager(transactionManager)
-            .<Cars, CarsDto>chunk(FETCH_SIZE)
+            .<Cars, CarSpreadDto>chunk(FETCH_SIZE)
             .faultTolerant()
             .skip(Exception.class)
             .skipLimit(Integer.MAX_VALUE)

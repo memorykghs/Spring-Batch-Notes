@@ -20,6 +20,14 @@ private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, JpaTransactionMa
 
 在設定 Step 時，通常我們會加入 `skip()` 來指定遇到什麼類型的 Exception 要跳過；而 `skipLimit()` 則是針對跳過的次數做設定。在使用這兩個方法前，一定要加上 `faultTolerant()` 產生 `FaulteTolerantStep`，因為 `skip()` 及 `skipLimit()` 是其類別中的方法。
 
+`skip()` 與 `skipLimit()` 必須同時存在，否則會報錯：
+```
+org.springframework.batch.core.step.skip.SkipLimitExceededException: Skip limit of '0' exceeded
+```
+<br/>
+
+當然有可以跳過的例外，也可以設定不可跳過的例外，像上面就使用 `noSkip()` 設定遇到 ErrorInputException 時不可跳過。
+
 ```java
 @Bean
 @Qualifier("DbToFile")
@@ -35,7 +43,6 @@ private Step fileReaderStep(ItemReader<BookInfoDto> itemReader, JpaTransactionMa
         .build();
 }
 ```
-當然有可以跳過的例外，也可以設定不可跳過的例外，像上面就使用 `noSkip()` 設定遇到 ErrorInputException 時不可跳過。
 
 那 Skip 的機制究竟是如何去決定當前紀錄的跳過與否呢?在批次處理過程中，當 Reader、Processor 及 Writer 拋出例外的時候，Spring Batch 會調用 `skip()` 方法，當沒有自訂 SkipPolicy 時預設會使用 `LimitCheckingItemSkipPolicy` 對象的內容。
 > When skip is on, Spring Batch asks a skip policy whether it should skip an exception thrown by an item reader, processor, or writer. The skip policy’s decision can depend on the type of the exception and on the number of skipped items so far in the step.
@@ -48,7 +55,7 @@ public FaultTolerantStepBuilder<I, O> skipPolicy(SkipPolicy skipPolicy) {
 ```
 <br/>
 
-針對這些要被 skip 的批次數據，對匯該批進行 scan，跑回圈並找出具體是哪一筆資料的原因，最後進行 rollback。
+針對這些要被 skip 的批次數據，會對該批進行 scan，跑回圈並找出具體是哪一筆資料的原因，最後進行 rollback。
 
 不過當默認的 Policy 無法滿足業務需求時，就可以自訂 Skip 策略。
 

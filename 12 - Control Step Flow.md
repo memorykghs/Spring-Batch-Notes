@@ -264,7 +264,7 @@ public Job job() {
 要結束 Step Flow 的方式有兩種：`end()` 以及 `fail()`，或是使用 `stopAndRestart()`，這邊只會介紹前兩種。
 
 #### Ending a Step
-`end()` 方法用來結束某個條件流的 `Step`。如果某個業務邏輯需要，狀況 A 時執行兩個 Step，狀況則執行 3 個 Step，那麼我們就可以使用 `end()` 主動結束，範例如下：
+如果某個業務邏輯需要，狀況 A 時執行兩個 Step，狀況則執行 3 個 Step，那麼我們就可以使用 `end()` 主動結束某個條件流的 `Step`，範例如下：
 
 ```java
 @Bean

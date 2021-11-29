@@ -99,7 +99,7 @@ assertEquals(born, values[2]);
 其中 `FlatFileHeaderCallback` 與 `FlatFileFooterCallback` 用於撰寫表頭表尾。<br/>
 ![](/images/7-3.png)
 
-## 建立 ItemReader
+## 建立 ItemWriter
 接下來在 `DbReaderJobConfig.java` 中新增 ItemWriter 相關設定。
 ```
 spring.batch.springBatchExample.job
