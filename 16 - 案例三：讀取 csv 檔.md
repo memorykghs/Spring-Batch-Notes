@@ -299,8 +299,7 @@ public class FileReaderJobConfig {
    * @return
    */
   @Bean("File001Step")
-  public Step fileReaderStep(@Qualifier("File001FileReader") ItemReader<Car> itemReader, @Qualifier("File001JpaWriter") ItemWriter<Car> itemWriter,
-      JpaTransactionManager jpaTransactionManager) {
+  public Step fileReaderStep(@Qualifier("File001FileReader") ItemReader<Car> itemReader, JpaTransactionManager jpaTransactionManager) {
 
     return stepBuilderFactory.get("File001Step")
       .transactionManager(jpaTransactionManager)
@@ -309,10 +308,8 @@ public class FileReaderJobConfig {
       .faultTolerant()
       .skip(Exception.class)
       .skipLimit(Integer.MAX_VALUE)
-      .writer(itemWriter)
       .listener(new File001StepListener())
       .listener(new File001ReaderListener())
-      .listener(new File001WriterListener())
       .build();
   }
 
@@ -362,20 +359,22 @@ public class FileReaderJobConfig {
 ```java
 ...
 @Bean("File001FileReader")
-public ItemReader<Car> getItemReader(@Value("${filePath}")
-String filePath) {
-return new FlatFileItemReaderBuilder<Car>().name("File001FileReader")
-	.encoding("UTF-8")
-	// .resource(new FileSystemResource("D:/Cars.csv"))
+public ItemReader<Car> getItemReader() {
+    return new FlatFileItemReaderBuilder<Car>().name("File001FileReader")
+        .encoding("UTF-8")
+        // .resource(new FileSystemResource("D:/Cars.csv"))
         .resource(new ClassPathResource("csv/Cars.csv"))
-	.linesToSkip(1)
-	.delimited() // 使用 DelimitedLineTokenizer
-	.names(MAPPER_FIELD) // 設定對應欄位
-	.fieldSetMapper(new BeanWrapperFieldSetMapper<Car>()) // 設定
-	.build();
+        .linesToSkip(1)
+        .delimited() // 使用 DelimitedLineTokenizer
+        .names(MAPPER_FIELD) // 設定對應欄位
+        .fieldSetMapper(new BeanWrapperFieldSetMapper<Car>()) // 設定
+        .build();
 }
 ...
 ```
+
+## 其他 Listener
+JobListener、StepListener、ReaderListener 就自行建立即可。
 
 ## 參考
 * https://stackoverflow.com/questions/66234905/reading-csv-data-in-spring-batch-creating-a-custom-linemapper
