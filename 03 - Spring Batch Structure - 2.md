@@ -122,7 +122,7 @@ ItemReader 是一個定義讀資料類別行為的 interface，當資料讀取�
 Spring Batch 為 ItemWriter 提供許多實現類，當然我們也可以去自定義 ItemWriter。其他類型的 ItemWriter 可以參考官網提供的 [ItemWriter 列表](https://docs.spring.io/spring-batch/docs/4.3.x/reference/html/appendix.html#itemWritersAppendix)。
 
 ## ItemProcessor
-ItemProcessor 主要是對毒入的資料進行處理，當 ItemReader 讀到一條資料後，在 ItemWriter 尚未寫入這條資料之前，可以透過 ItemProcessor 提供的功能對資料進行業務邏輯處理。如果處理的過程中，該筆資料不應該繼續往下一個步驟 ( 通常是 ItemWriter ) 傳遞，就回傳 `null`。
+ItemProcessor 主要是對讀入的資料進行處理，當 ItemReader 讀到一條資料後，在 ItemWriter 尚未寫入這條資料之前，可以透過 ItemProcessor 提供的功能對資料進行業務邏輯處理。如果處理的過程中，該筆資料不應該繼續往下一個步驟 ( 通常是 ItemWriter ) 傳遞，就回傳 `null`。
 
 ## Spring Batch 監聽器
 Spring Batch 提供了多種監聽器 ( Listener )，用於在批次任務執行過程中監聽流程。常用的監聽器根據粒度大到小可以分為：

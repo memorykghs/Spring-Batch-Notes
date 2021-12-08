@@ -188,7 +188,7 @@ class BatchConfigurerConfiguration {
 ![](/images/8-8.png)
 
 ## JobRegistry 功能與原理
-在啟動批次的部分，`JobRegistry` ( 其父介面是 `JobLocator` ) 並非一定要配置，不過當想要在執行環境中追蹤哪接 Job 是可以用的，就可以使用他。而使用的最主要目的就是，在 Job 被創建的當下，透過 Job 設定的名稱映射，將這些 Job 收集起來；也可以對這接已經收集到的 Job 做一些屬性或是名稱上的設定。
+在啟動批次的部分，`JobRegistry` ( 其父介面是 `JobLocator` ) 並非一定要配置，不過當想要在執行環境中追蹤哪些 Job 是可以用的，就可以使用他。而使用的最主要目的就是，在 Job 被創建的當下，透過 Job 設定的名稱映射，將這些 Job 收集起來；也可以對這些已經收集到的 Job 做一些屬性或是名稱上的設定。
 
 有兩種自動填充 `JobRegistry`，分別是 `JobRegistryBeanPostProcessor` 和 `AutomaticJobRegistrar`，這邊指針對 `JobRegistryBeanPostProcessor` 介紹。
 
@@ -280,7 +280,7 @@ public class BatchConfig {
 }
 ```
 
-另外，由於要將建立出來的 Job 註冊到 Spring Batch 的環境中，所以使用 `@Bean` 搭配 `@Configuration` 的方式產生 `JobRegistryBeanPostProcessor` 對像，在裡面建立並將 `JobRegistry` 傳入。
+另外，由於要將建立出來的 Job 註冊到 Spring Batch 的環境中，所以使用 `@Bean` 搭配 `@Configuration` 的方式產生 `JobRegistryBeanPostProcessor` 對象，在裡面建立並將 `JobRegistry` 傳入。
 
 `jpaTransactionManager()` 方法中傳入 `DataSource` 物件，讓他依照當前的 DataSource 建立 TransacionManager。TransactionManager 需要在建立 Step 的時候注入。
 

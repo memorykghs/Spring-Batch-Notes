@@ -1,5 +1,5 @@
 # 11 - 建立 Tasklet
-前面提到的 **Chunk-oriented process** 並非是 Step 中唯一個一種處理模式，通常會這樣處理資料是因為來源數據可能非常龐大，且需要做一些業務邏輯處理，透過資料的分批與聚合，將這些動作拆分且有效率的達到目的。
+前面提到的 **Chunk-oriented process** 並非是 Step 中唯一種處理模式，通常會這樣處理資料是因為來源數據可能非常龐大，且需要做一些業務邏輯處理，透過資料的分批與聚合，將這些動作拆分且有效率的達到目的。
 
 不過當今天 Step 中只要做一件簡單的事情，例如刪除資料，沒有讀取也沒有輸出的話，依照前面介紹的 Chunk-oriented 的模式，會需要建立一個 ItemReader 並在處理結束時回傳 `null`，再建立一個不做任何事情的 ItemWriter，可是這樣的動作顯得有些多此一舉，畢竟我就只是想要刪除資料而已為什麼需要這麼麻煩!?<br/>
 
@@ -10,7 +10,7 @@
 所以 Spring Batch 框架額外提供了 `TaskletStep` 來處理類似的情況。
 
 ## Tasklet
-`Tasklet` 是一個介面，並提供一個 `execute()` 方法，該方法最後會回傳執行結果： `RepeatStatus.FINISHED` 或丟出例外 ( 代表執行失敗 )。實作這個介面的物件會被 `TaskletStep` 呼叫，代表其實我們還是需要建立一個 Step，並在 Step 中設使用 `tasklet()` 設定要執行的 `Tasklet`。
+`Tasklet` 是一個介面，並提供一個 `execute()` 方法，該方法最後會回傳執行結果： `RepeatStatus.FINISHED` 或丟出例外 ( 代表執行失敗 )。實作這個介面的物件會被 `TaskletStep` 呼叫，代表其實我們還是需要建立一個 Step，並在 Step 中使用 `tasklet()` 設定要執行的 `Tasklet`。
 
 由於 `Tasklet` 中可能會使用 stored procedure、script 或是簡單的 SQL 對資料進行異動，因此當 `Tasklet` 被呼叫執行過程，都會有 Transaction。<br/>
 
@@ -271,7 +271,7 @@ public Step clearLogStep(JpaTransactionManager transactionManager, ClearLogDataT
 | | Tasklet | Chunk |
 | --- | --- | --- |
 | When | 當 Job 只需要執行單粒度處理的情況。 | 當要執行的作業很複雜，並涉及讀取、處理或寫入時的情況。 |
-| How | 沒有拆分或聚合，只有單一的處理。 | 涉及讀取及根據業務邏輯對資料進行處理後，將資料聚合直到達到提交尖閣，最後將要輸出的資料塊寫到文件或資料庫中。
+| How | 沒有拆分或聚合，只有單一的處理。 | 涉及讀取及根據業務邏輯對資料進行處理後，將資料聚合直到達到提交間隔，最後將要輸出的資料塊寫到文件或資料庫中。
 | Usage | 較少使用 | 較常見的批次處理模式 |
 
 ## 參考
