@@ -45,6 +45,10 @@
 5. @OnProcessError、@OnWriteError
 
 ---
+
+## ColumnMapRowMapper
+* [ColumnMapRowMapper](https://stackoverflow.com/questions/7933336/how-to-use-spring-columnmaprowmapper)
+
 ## Test
 - [ ] Spring Batch 例外處理
 - [ ] 非同步搭配執行緒
