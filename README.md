@@ -47,7 +47,12 @@
 ---
 
 ## ColumnMapRowMapper
+使用 `JdbsRepositoryItemReader` 查詢回來直接將查詢結果轉為 Map
 * [ColumnMapRowMapper](https://stackoverflow.com/questions/7933336/how-to-use-spring-columnmaprowmapper)
+
+> 範例
+```java
+```
 
 ## Test
 - [ ] Spring Batch 例外處理
