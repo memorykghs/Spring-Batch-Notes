@@ -63,6 +63,11 @@
 - [ ] 非同步搭配執行緒
 - [ ] 將兩個 Writer 合併成一個
 
+## 監控
+```
+C:\Program Files\Zulu\zulu-8\bin\jconsole
+```
+
 ## 其他
 * [10 Handy Spring Batch Tricks](https://levelup.gitconnected.com/10-handy-spring-batch-tricks-24556cf549a4)
 * [Clear Batch Data Log](https://github.com/arey/spring-batch-toolkit/blob/spring-batch-toolkit-4.0.0/src/main/java/com/javaetmoi/core/batch/tasklet/RemoveSpringBatchHistoryTasklet.java)
