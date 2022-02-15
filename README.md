@@ -51,6 +51,10 @@
 
 ---
 
+## Retry
+* https://www.tpisoftware.com/tpu/articleDetails/1407
+* https://docs.spring.io/spring-batch/docs/current/reference/html/retry.html
+
 ## ColumnMapRowMapper
 使用 `JdbsRepositoryItemReader` 查詢回來直接將查詢結果轉為 Map
 * [ColumnMapRowMapper](https://stackoverflow.com/questions/7933336/how-to-use-spring-columnmaprowmapper)
@@ -63,6 +67,11 @@
 - [ ] Spring Batch 例外處理
 - [ ] 非同步搭配執行緒
 - [ ] 將兩個 Writer 合併成一個
+
+## 監控
+```
+C:\Program Files\Zulu\zulu-8\bin\jconsole
+```
 
 ## 其他
 * [10 Handy Spring Batch Tricks](https://levelup.gitconnected.com/10-handy-spring-batch-tricks-24556cf549a4)
