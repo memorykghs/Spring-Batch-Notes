@@ -135,7 +135,7 @@ public interface StepListener {
 }
 ```
 
-而我們使用的是 StepExecutionListener，這個介面提供一些阻斷 ( interceptions ) 及生命週期 ( life-cycle ) 相關的方法。實作該介面會有兩個一定要 override 的方法，分別是 `beforeStep()` 及 `afterStep()`，可以透過這兩個方法在執行 Step 的前後做一些處理。`afterStep()` 會回傳一個 `ExitStatus` 狀態代碼，如 `EXECUTING`、`COMPLETED`、`STOPPED` 等等，來表示這次 Step 的執行是否成功。
+而我們使用的是 StepExecutionListener，這個介面提供一些阻斷 ( interceptions ) 及生命週期 ( life-cycle ) 相關的方法。實作該介面會有兩個一定要 override 的方法，分別是 `beforeStep()` 及 `afterStep()`，可以透過這兩個方法在執行 Step 的前後做一些處理。`afterStep()` 會回傳一個 `ExitStatus` 狀態代碼，如 `EXECUTING`、`COMPLETED`、`STOPPED` 等等，來表示這次 Step 的執行是否成功 ( 後面會提到這個退出代碼是可以自訂的 )。
 
 ```
 spring.batch.springBatchExample.batch.job
