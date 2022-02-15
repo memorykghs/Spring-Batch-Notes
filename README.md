@@ -1,3 +1,8 @@
+# Spring Batch Notes
+## 大綱
+##### 基礎介紹
+
+
 * 為何不用 EJB?而用 Spring? 
 
 * 一個 Job 一定會有一個 Step
