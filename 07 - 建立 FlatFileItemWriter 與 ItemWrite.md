@@ -20,7 +20,7 @@ Spring Batch 的讀取和寫入資料來源比較常見的有這三種：XML、D
 寫入時通常會將一個 Data Object 轉成一行 ( line )，同一行資料的欄位之間可以用某種方式分隔。如果是 `delimited` 的話，比較常見的分隔符號有分號 `;`、逗號 `,` 等等。若是以長度劃分的話，就要在程式內設定每個欄位的長度。
 
 ## LineAggregator
-`LineAggregator` 是 FlatFileItemWriter 中實際處理資源的一個角色，與後面提到的 `LineTokenizer` 功能類似。在撰寫 FlatFileItemWriter 時，首先要提供 `Resource` 告訴它文件要產在哪，再來就是要通過 `LineAggregator` 對象處理資源，這時候會需要提供一個  ( 分隔符 ) 來告訴它如何將將 Data Object 轉換為 String，也就是將 Data Object 中的所有屬性聚合成一個 String 以寫入文件。
+`LineAggregator` 是 FlatFileItemWriter 中實際處理資源的一個角色，與後面提到的 `LineTokenizer` 功能類似。在撰寫 FlatFileItemWriter 時，首先要提供 `Resource` 告訴它文件要產在哪，再來就是要通過 `LineAggregator` 對象處理資源，這時候會需要提供一個  ( 分隔符 ) 來告訴它如何將 Data Object 轉換為 String，也就是將 Data Object 中的所有屬性聚合成一個 String 以寫入文件。
 
 如果從 Process 回傳的物件本身就是 String 物件，就不需要特別做處理，像是下方提到的 `PassThroughLineAggregator`；但如果回傳的是一個 Entity 或是 DTO 的話，通常會使用 `DelimitedLineAggregator` 並告訴他 Data Object 內的屬性應該如何 mapping。
 
@@ -32,7 +32,7 @@ public interface LineAggregator<T> {
 }
 ```
 
-`LineTokenizer` 則是反向的將一串 String 拆解為不同的字段，傳入一段 String 並輸出 `FieldSet`，最後塞到 Data Object 中。`LineAggregator` 則是傳入一個 `item`，`item` 可以是任何行別，通常會傳入 Data Object 的型別，最後回傳 String。
+`LineTokenizer` 則是反向的將一串 String 拆解為不同的字段，傳入一段 String 並輸出 `FieldSet`，最後塞到 Data Object 中。`LineAggregator` 則是傳入一個 `item`，`item` 可以是任何型別，通常會傳入 Data Object 的型別，最後回傳 String。
 
 #### PassThroughLineAggregator
 實現 `LineAggregator` 最基本的類別是 `PassThroughLineAggregator`，它會預設傳入的物件的每一個屬性是可以使用 `toString()` 方法直接轉換為 String 物件的：

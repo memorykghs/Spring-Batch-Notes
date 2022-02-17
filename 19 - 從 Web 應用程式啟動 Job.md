@@ -4,7 +4,7 @@ Spring Batch 是一個可以依附在 Spring 應用程式環境的輕量級框�
 下圖代表了應用程式環境可以包含 Spring 執行環境。<br/>
 ![](/images/19-1.png)
 
-讓 Spring Batch 依附在應用程式中非常方便，在進一步於這種架構下通過 Http 請求觸發批次作業前，我們先來看看如何在 Web 應用程式中配置 Spring Batch。
+讓 Spring Batch 依附在應用程式中非常方便，進一步於這種架構下通過 Http 請求觸發批次作業前，我們先來看看如何在 Web 應用程式中配置 Spring Batch。
 
 ## 在 Web 應用程式中遷入 Spring Batch
 Spring Framework 提供了一個 servlet 偵聽器類別 `ContextLoaderListener`，`ContextLoaderListener` 會根據 Web 應用程式的生命週期管理執行環境的生命週期。
@@ -84,32 +84,14 @@ public class BatchConfig {
 spring.batch.springBatchPractice
   |--SpringBatchExmapleApplication.java // 修改
 spring.batch.springBatchPractice.controller
-  |--BatchContoller.java // 修改
+  |--BatchContoller.java // 新增
 ```
-
-* `SpringBatchExmapleApplication.java`
-```java
-@SpringBootApplication
-@EnableBatchProcessing
-public class SpringBatchExmapleApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(SpringBatchExmapleApplication.class, args);
-    }
-}
-```
-在 Application 中會移除掉 `JobLauncher` 啟動、以及產生 `JobParameters` 的方法，改由在 Controller 做。
-<br/> 
-
 
 * `BatchController.java`
 ```java
 @Api(tags = "Spring Batch Examples")
 @RestController
 public class BatchController {
-
-    /** LOG */
-    private static final Logger LOGGER = LoggerFactory.getLogger(BatchController.class);
 
     @Autowired
     private JobRegistry jobRegistry;
@@ -153,6 +135,20 @@ public class BatchController {
     }
 }
 ```
+
+* `SpringBatchExmapleApplication.java`
+```java
+@SpringBootApplication
+@EnableBatchProcessing
+public class SpringBatchExmapleApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBatchExmapleApplication.class, args);
+    }
+}
+```
+最後在 Application 中移除掉 `JobLauncher` 啟動、以及產生 `JobParameters` 的方法，改由在 Controller 做。
+<br/> 
 
 這邊我們打到前面寫過的讀取 DB 資料的批次，用 `JobRegistry` 依照 Job 名稱取出，並呼叫 `createJobParams()` 方法取得 `JobParameters`。
 

@@ -56,32 +56,6 @@ public class SpringBatchExmapleApplication {
             LOGGER.error("springBatchPractice執行失敗", e);
         }
     }
-}
-```
-
-`JobLauncher` 的 `run()` 方法會傳入兩個參數：`Job` 與 `JobParameters`。
-
-```java
-@SpringBootApplication
-@EnableBatchProcessing
-public class SpringBatchExmapleApplication {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpringBatchExmapleApplication.class);
-
-    public static void main(String[] args) throws NoSuchJobException, JobExecutionAlreadyRunningException,
-        JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException {
-        try {
-            // String jobName = args[0];
-            String jobName = "Db001Job";
-
-            ConfigurableApplicationContext context = SpringApplication.run(SpringBatchExmapleApplication.class, args);
-            Job job = context.getBean(JobRegistry.class).getJob(jobName);
-            context.getBean(JobLauncher.class).run(job, createJobParams());
-
-        } catch (Exception e) {
-            LOGGER.error("springBatchPractice執行失敗", e);
-        }
-    }
 
     /**
      * 產生JobParameter
@@ -97,9 +71,18 @@ public class SpringBatchExmapleApplication {
 }
 ```
 
-JobParamter 的功能就像前面提到的一樣，提供執行環境判斷是不是相同的 JobInstance。`createJobParams()` 方法中使用 `JobParametersBuilder` 建立 `JobParameters`。`JobParameters` 有 4 種不同的型別可以使用：String、Date、Long、Double。要新增 `JobParameters` 就使用 `addXXX()`方法，XXX 代表不同型別的參數，`JobParametersBuilder` 內有一個記錄所有 Parameters 的 Map，`addXXX()` 方法會將參數存進內部的 Map。
+`JobLauncher` 的 `run()` 方法會傳入兩個參數：`Job` 與 `JobParameters`。
 
-`addXXX()` 方法中會傳入一組 `key` 值與 `value`，用來為參數命名，執行時期也可以透過參數名稱將值取出。最後會傳的時候要呼叫 `JobParametersBuilder` 的 `toParamteters()` 方法，將 `JobParametersBuilder` 內部存的 Map 轉成 `JobParamters`。
+JobParamter 的功能就像前面提到的一樣，提供執行環境判斷是不是相同的 JobInstance。`createJobParams()` 方法中使用 `JobParametersBuilder` 建立 `JobParameters`。`JobParameters` 有 4 種不同的型別可以使用：
+
+1. String
+2. Date
+3. Long
+4. Double
+
+要新增 `JobParameters` 就使用 `addXXX()`方法，XXX 代表不同型別的參數，`JobParametersBuilder` 內有一個記錄所有 Parameters 的 Map，`addXXX()` 方法會將參數存進內部的 Map。
+
+`addXXX()` 方法中會傳入一組 `key` 值與 `value`，用來為參數命名，執行時期也可以透過參數名稱將值取出。最後回傳的時候要呼叫 `JobParametersBuilder` 的 `toParamteters()` 方法，將 `JobParametersBuilder` 內部存的 Map 轉成 `JobParamters`。
 
 ## 啟動時重複執行
 在使用 Java Config 執行 Spring Batch 的 Job 時，如果不做任何配置，專案在啟動時預設就會執行定義好的 Job，這也就是為什麼會在 console 看到批次 Listener 出現 2 次的原因。如果不想要在專案啟動時執行批次，可以在 `application.properties` 檔案中新增以下設定：

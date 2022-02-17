@@ -17,7 +17,7 @@
 ![](/images/11-1.png)
 
 ## 建立 Tasklet
-由於想要在 `application.properties` 內設定一個預設值，先在設定檔中加入參數。
+由於這個 Tasklet 主要是要清除批次相關 Table 的資料，且可以透過傳入的參數指定要刪掉幾個月前的，所以先在 `application.properties` 內設定一個預設值。
 
 ```
 src/main/resources
@@ -36,9 +36,10 @@ src/main/java
 # default clear batch log month range
 defaultMonth=12
 ```
+此為預設刪除的月份數，等於一次刪掉一年的量。
 <br/>
 
-然後我們想要在啟動的時候判斷執行的 Job 名稱如果是清除 Log 的話，可以依照傳入指定要刪除的月份區間，例如給定 1 就是刪除從今天回推一個月之前的所有 Log都要清除。
+然後我們想要在啟動的時候判斷執行的 Job 名稱如果是清除 Log 的話，可以依照傳入指定要刪除的月份區間，例如給定 1 就是刪除從今天回推一個月之前，跟批次相關的 6 張表內容都要清除。
 
 * `SpringBatchExmapleApplication.java`
 ```java
@@ -242,7 +243,7 @@ private String defaultMonth;
 <br/>
 
 建立完 `Tasklet` 後，回到 `DbReaderJobConfig.java` 中新增一個 Step，並注入剛剛撰寫的 `Tasklet`。
-* `DbReaderJobConfig.java`
+* `ClearLogJobConfig.java`
 ```java
 ...
 @Bean

@@ -9,22 +9,24 @@ Step 物件封裝了批次處理作業的一個獨立的、有順序的階段。
 Spring Batch 中最常見的處理風格其實是 **Chunk-oriented**，指的是一次讀取某一個設定好的數量的資料區塊，一旦讀取的項目數量等於所設定的提交間隔 ( commit interval )，這"塊"資料就會交由 ItemWriter 進行交易並 commit。大至的流程如下：<br/>
 ![](/images/5-2.png)
 
-ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進行輸出。當然，也可以在讀取資料後透過 ItemProcessor 處理資料，然後再由 ItemWriter 輸出。當讀取完一"塊"資料後，才會統一往下給 ItemProcessor 處理，概念如下：<br/>
+ItemReader 會反覆的讀取資料，直到達到提交間隔數量，就會進行輸出。如果讀取資料後透過 ItemProcessor 處理資料，然後再由 ItemWriter 輸出，那麼就會是先讀取一筆資料後往 ItemProcessor 丟，達到一批的量之後整批交給 ItemWriter。
+
+當讀取完一"塊"資料後，才會統一往下給 ItemWriter 處理，概念如下：<br/>
 ![](/images/5-3.png)
 
 接下來就開始建立一個 Step。
 ```
 spring.batch.springBatchExample.batch.job
-  |--DbReaderJobConfig.java // 修改
+  |--ReadFromDbJobConfig.java // 修改
 spring.batch.springBatchExample.batch.listener 
-  |--Db001JobListener.java
+  |--ReadFromDbJobListener.java
 ```
 <br/>
 
-* `DbReaderJobConfig.java`
+* `ReadFromDbJobConfig.java`
 ```java
 @Configuration
-public class DbReaderJobConfig {
+public class ReadFromDbJobConfig {
 
 	/** JobBuilderFactory */
 	@Autowired
@@ -43,10 +45,10 @@ public class DbReaderJobConfig {
 	 * @return
 	 */
 	@Bean
-	public Job dbReaderJob(@Qualifier("Db001Step") Step step) {
-		return jobBuilderFactory.get("Db001Job")
+	public Job ReadFromDbJob(@Qualifier("ReadFromDbStep") Step step) {
+		return jobBuilderFactory.get("ReadFromDbJob")
 			.start(step)
-			.listener(new Db001JobListener())
+			.listener(new ReadFromDbJobListener())
 			.build();
 	}
 
@@ -57,11 +59,11 @@ public class DbReaderJobConfig {
 	 * @param transactionManager
 	 * @return
 	 */
-	@Bean("Db001Step")
-	public Step dbReaderStep(@Qualifier("Db001JpaReader") ItemReader<Cars> itemReader, @Qualifier("Db001FileWriter") ItemWriter<Cars> itemWriter,
+	@Bean("ReadFromDbStep")
+	public Step ReadFromDbStep(@Qualifier("ReadFromDbJpaReader") ItemReader<Cars> itemReader, @Qualifier("ReadFromDbFileWriter") ItemWriter<Cars> itemWriter,
 			JpaTransactionManager transactionManager) {
 
-		return stepBuilderFactory.get("Db001Step")
+		return stepBuilderFactory.get("ReadFromDbStep")
 			.transactionManager(transactionManager)
 			.<Cars, Cars>chunk(FETCH_SIZE)
 			.faultTolerant()
@@ -78,7 +80,7 @@ public class DbReaderJobConfig {
   
   需要注意的是，`PlatformTransactionManager` 是通過加在類別上的 `@EnableBatchProcessing` 標註取得默認的物件實例，可以用 `@Autowired` 或是當作傳入參數注入到產生 Step 的方法中。而如果像上面這個例子是沒有加上 `@EnableBatchProcessing` 標註的話，就需要另外注入。
   
-  這邊預設使用的是 `JpaTransactionManager`，使用此類別需要多 import dependency：
+  這邊要使用的是 `JpaTransactionManager`，使用此類別需要多 import dependency：
   ```xml
   <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -96,8 +98,8 @@ public class DbReaderJobConfig {
 * `writer()`：輸出或 commit ItemReader 提供的項目。
 <br/>
 
-* `faultTolerant()`：回傳 FaultTolerantStepBuilder，此 Builder 才能設訂 Skip 相關的參數。
-* `skip()`：在處理的過程中假設遇到某些作物，但不希望 Step 因為例外導致運行失敗，可以使用此方法被配置要跳過的邏輯。上面的例子就是當出現例外的時候要跳過，並繼續下面的批次。
+* `faultTolerant()`：回傳 FaultTolerantStepBuilder，此 Builder 才能設定 Skip 相關的參數。
+* `skip()`：在處理的過程中假設遇到某些錯誤，但不希望 Step 因為例外導致運行失敗，可以使用此方法配置要跳過的邏輯。上面的例子就是當出現例外的時候要跳過，並繼續下面的批次。
 * `skipLimit()`：與 `skip()` 搭配使用，設定跳過的上限次數。
 * `noSkip()`：有些例外可以配置跳過，當然也可以設定出現某些例外時不能跳過，放在此方法內的例外將導致 Step 運行中止。另外 `skip()` 與 `.noSkip()` 放置的前後順序不會影響流程。
 <br/>
@@ -139,16 +141,16 @@ public interface StepListener {
 
 ```
 spring.batch.springBatchExample.batch.job
-  |--DbReaderJobConfig.java // 修改
+  |--ReadFromDbJobConfig.java // 修改
 spring.batch.springBatchExample.batch.listener 
-  |--Db001JobListener.java
-  |--Db001StepListener.java // 新增
+  |--ReadFromDbJobListener.java
+  |--ReadFromDbStepListener.java // 新增
 ```
 
-* `Db001StepListener.java`
+* `ReadFromDbStepListener.java`
 ```java
-public class Db001StepListener implements StepExecutionListener{
-  private static final Logger LOGGER = LoggerFactory.getLogger(Db001StepListener.class);
+public class ReadFromDbStepListener implements StepExecutionListener{
+  private static final Logger LOGGER = LoggerFactory.getLogger(ReadFromDbStepListener.class);
 
   @Override
   public void beforeStep(StepExecution stepExecution) {
@@ -158,7 +160,7 @@ public class Db001StepListener implements StepExecutionListener{
   @Override
   public ExitStatus afterStep(StepExecution stepExecution) {
       String msg = new StringBuilder()
-              .append("Db001Step: 讀取DB Table筆數: ")
+              .append("ReadFromDbStep: 讀取DB Table筆數: ")
               .append(stepExecution.getReadCount())
               .append(", 成功筆數: ")
               .append(stepExecution.getWriteCount())
@@ -170,20 +172,20 @@ public class Db001StepListener implements StepExecutionListener{
 }
 ```
 
-建立 ItemReaderListener 後就可以使用 `listener()` 方法在 `DbReaderJobConfig.java` 中注入 Listener。
+建立 ItemReaderListener 後就可以使用 `listener()` 方法在 `ReadFromDbJobConfig.java` 中注入 Listener。
 
-* `DbReaderJobConfig.java`
+* `ReadFromDbJobConfig.java`
 ```java
-@Bean("Db001Step")
-public Step dbReaderStep(JpaTransactionManager transactionManager) {
+@Bean("ReadFromDbStep")
+public Step ReadFromDbStep(JpaTransactionManager transactionManager) {
 
-  return stepBuilderFactory.get("Db001Step")
+  return stepBuilderFactory.get("ReadFromDbStep")
       .transactionManager(transactionManager)
       .<Cars, Cars>chunk(FETCH_SIZE)
       .faultTolerant()
       .skip(Exception.class)
       .skipLimit(Integer.MAX_VALUE)
-      .listener(new Db001StepListener()) // 新增
+      .listener(new ReadFromDbStepListener()) // 新增
       .build();
 }
 ```

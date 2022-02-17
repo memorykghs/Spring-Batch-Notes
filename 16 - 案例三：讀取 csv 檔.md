@@ -10,7 +10,7 @@
 ## FieldSet
 在 Spring Batch 中，不管是用於 input 或是 output，有一個很重要的類別 `FieldSet`。`FieldSet` 是 Spring Batch 中的一個抽象概念，主要是用來 binding 文件資源。
 
-> A FieldSet is Spring Batch’s abstraction for enabling the binding of fields from a file resource.
+> A FieldSet is Spring Batch's abstraction for enabling the binding of fields from a file resource.
 
 講的簡單一點，他的概念有點類似於 JDBC 的 `ResultSet`。而 `FieldSet` 需要傳入一個 String 陣列的參數，在來也可以另外設定每個 `Field` 的名稱，就可以透過索引 ( index ) 或名稱 ( names ) 的 pattern 來取得對應的 `Feild`。例子如下：
 
@@ -353,7 +353,7 @@ public class FileReaderJobConfig {
 
 在 `getItemReader()` 方法中，使用 FlatFileItemReaderBuilder 來建立我們要的 FlatFileItemReade，並透過 `name()` 方法來為 FlatFileItemReader 實例命名。`linesToSkip()` 方法用來跳過表頭。
 
-再來，依照檔案存放的位置使用不同的協定讀取檔案，`ClassPathResource` 只能讀到專案內預設路徑下的東西，使用 `FileSystemResource` 則可以讀取本機內的路徑。`lineMapper()` 方法中我們另外寫了一個 `private` 方法 `getCarLineMapper()` 用來產生上面提到的 `LineMapper`、`LineTokenizer` 以及 `FieldSetMapper`，最後回傳 `LineMapper` 物件回傳。
+再來，依照檔案存放的位置使用不同的協定讀取檔案，`ClassPathResource` 只能讀到專案內預設路徑下的東西，使用 `FileSystemResource` 則可以讀取本機內的路徑。`lineMapper()` 方法中我們另外寫了一個 `private` 方法 `getCarLineMapper()` 用來產生上面提到的 `LineMapper`、`LineTokenizer` 以及 `FieldSetMapper`，最後回傳 `LineMapper` 物件。
 
 跟 FileItemWriter 一樣，我們可以將這個過程再簡化：
 ```java
